@@ -1,0 +1,11 @@
+{
+    "name": "Mimiro Build Workflow",
+    "description": "Mimiro CI workflow template.",
+    "iconName": "example-icon",
+    "categories": [
+        "Docker"
+    ],
+    "filePatterns": [
+        "^Dockerfile"
+    ]
+}
