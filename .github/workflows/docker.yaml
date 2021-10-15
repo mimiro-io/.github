@@ -15,7 +15,4 @@ jobs:
     name: Pass input and secrets to my-action
     runs-on: self-hosted
     steps:
-      - uses: ./.github/actions/my-action@v1
-        with:
-          username: ${{ inputs.username }}
-          token: ${{ secrets.token }}      
+      - run: echo "Reusable test by ${{ inputs.username }} with ${{ secrets.token }}"    
