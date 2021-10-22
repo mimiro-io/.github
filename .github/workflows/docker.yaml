@@ -1,18 +1,105 @@
-name: Reusable workflow example
+name: Reusable CI workflow for Docker
 
 on:
   workflow_call:
     inputs:
-      username:
+      image:
         required: true
         type: string
     secrets:
-      token:
+      AWS_ACCESS_KEY_ID:
         required: true
-
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      
 jobs:
-  example_job:
-    name: Pass input and secrets to my-action
-    runs-on: self-hosted
+  CI:
+    name: Docker_CI
+    runs-on: ubuntu-latest
+
     steps:
-      - run: echo "Reusable test by ${{ inputs.username }} with ${{ secrets.token }}"    
+      - name: Checkout
+        uses: actions/checkout@v2      
+
+      - name: Run Trivy vulnerability scanner in repo mode
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'table'
+          #template: '@/contrib/sarif.tpl'
+          #output: 'trivy-results.sarif'
+          severity: 'CRITICAL'
+          
+     # To be enabled only if Github security scanning is enabled for the Organization
+     # - name: Upload Trivy scan results to GitHub Security tab
+     #   uses: github/codeql-action/upload-sarif@v1
+     #   with:
+     #     sarif_file: 'trivy-results.sarif'
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+      
+      - name: Create/Verify Amazon ECR repo
+        id: create-ecr-repo
+        uses: int128/create-ecr-repository-action@v1
+        with:
+          repository: ${{ inputs.image }}    
+      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1  
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      
+      - name: Docker Build
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: false
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:${{ github.sha }}
+
+      - name: Trivy vulnerability scan
+        uses : aquasecurity/trivy-action@master
+        with :
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:${{ github.sha }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push Latest Docker Image to ECR
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        id: docker_push
+        uses: docker/build-push-action@v2
+        env:
+          IMAGE_TAG_1: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:${{ github.sha }}
+          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:latest
+        with:
+          push: true
+          tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}},${{env.IMAGE_TAG_3}}
+
+      
+      - name: Get Release Tag
+        if: github.event_name == 'release'
+        id: get_tag
+        run: echo ::set-output name=tag::$(echo $GITHUB_REF | cut -d / -f 3)
+
+      - name: Push Image with Release Tag to ECR for published release
+        if: github.event_name == 'release' && github.event.action == 'published'
+        id: docker_push_release
+        uses: docker/build-push-action@v2
+        env:
+          IMAGE_TAG_1: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:${{ github.sha }}
+          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:latest
+          IMAGE_TAG_3: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:${{ steps.get_tag.outputs.tag }}
+        with:
+          push: true
+          tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}},${{env.IMAGE_TAG_3}}
+        
