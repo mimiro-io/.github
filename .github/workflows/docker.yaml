@@ -83,7 +83,7 @@ jobs:
           IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:latest
         with:
           push: true
-          tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}},${{env.IMAGE_TAG_3}}
+          tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}}
 
       
       - name: Get Release Tag
