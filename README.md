@@ -31,3 +31,11 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET_WITH_ECR_PUSH_PERMISSION }}
 
 ```
+
+## Add a workflow status badge to you repo
+
+Add the following to your repo's README.md (replace `repo-name` with the actual repo name):
+
+```sh
+[![CI](https://github.com/mimiro-io/repo-name/actions/workflows/ci.yaml/badge.svg)](https://github.com/mimiro-io/repo-name/actions/workflows/ci.yaml)
+```
