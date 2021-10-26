@@ -11,6 +11,8 @@ on:
         required: true
       AWS_SECRET_ACCESS_KEY:
         required: true
+      ECR_REPO_POLICY:
+        required: true
       
 jobs:
   CI:
@@ -49,6 +51,11 @@ jobs:
         uses: int128/create-ecr-repository-action@v1
         with:
           repository: ${{ inputs.image }}    
+
+      - name: Update ECR Repo Policy
+        id: update-ecr-policy
+        run: |
+          aws ecr set-repository-policy --policy-text ${{ secrets.ECR_REPO_POLICY }}  --repository-name ${{ inputs.image }}
       
       - name: Login to Amazon ECR
         id: login-ecr
