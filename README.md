@@ -29,6 +29,7 @@ jobs:
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID_WITH_ECR_PUSH_PERMISSION }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_KEY_SECRET_WITH_ECR_PUSH_PERMISSION }}
+      ECR_REPO_POLICY: ${{ secrets.ECR_REPO_POLICY }}
 
 ```
 
