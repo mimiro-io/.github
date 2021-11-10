@@ -42,11 +42,11 @@ Add the following to your repo's README.md (replace `repo-name` with the actual 
 [![CI](https://github.com/mimiro-io/repo-name/actions/workflows/ci.yaml/badge.svg)](https://github.com/mimiro-io/repo-name/actions/workflows/ci.yaml)
 ```
 
-### Ignore Trivy Scan
+### Ignore Trivy Scan errors
 
 Its not recommended to ignore trive vulnerability scan, but if its not possible to fix
-certain vulnerabilities, then you can skip this check by supplying `ignore_trivy_scan : true`. 
-This is an optional attribute. By default its always set to `false`
+certain vulnerabilities, then you can skip this check by supplying `trivy_exit_code : 0`. 
+This is an optional attribute. By default its always set to `1`. 
 
 Example usage:  
 
@@ -56,5 +56,5 @@ jobs:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
       image: ${{ github.event.repository.name }}  # Name of the Docker Image (without tags and registery name)
-      ignore_trivy_scan : true
+      trivy_exit_code : 0
 ```
