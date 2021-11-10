@@ -6,10 +6,10 @@ on:
       image:
         required: true
         type: string
-      ignore_trivy_scan:
+      trivy_exit_code:
         required: false
-        type: boolean
-        default: false
+        type: number
+        default : 1
     secrets:
       AWS_ACCESS_KEY_ID:
         required: true
@@ -75,11 +75,11 @@ jobs:
         with :
           image-ref: "${{ steps.set_default_tag.outputs.default_tag }}"
           format: 'table'
-          exit-code: '1'
+          exit-code: ${{ inputs.trivy_exit_code }}
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-        if: ${{ !inputs.ignore_trivy_scan }}
+    
 
       - name: Push Latest Docker Image to ECR
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
