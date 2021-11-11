@@ -1,4 +1,4 @@
-name: Reusable CI workflow for Docker
+name: Reusable CI workflow for Docker Build & Push to ECR
 
 on:
   workflow_call:
@@ -19,13 +19,12 @@ on:
         required: true
         
 jobs:
-  CI:
+  ECR:
     name: Docker_CI
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2      
+      - uses: actions/checkout@v2
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -108,4 +107,34 @@ jobs:
         with:
           push: true
           tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}},${{env.IMAGE_TAG_3}}
-        
+
+  IRSA:
+    name: IAM_Role_For_ServiceAccount
+    runs-on : ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2      
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x' 
+          architecture: 'x64'
+
+      - name: deploy-irsa-aws
+        run: |
+          python --version
+          wget https://raw.githubusercontent.com/mimiro-io/.github/irsa/script/setup-iam.py
+          aws iam list-account-aliases
+          python setup-iam.py
+
+      
+     
+
