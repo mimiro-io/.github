@@ -19,94 +19,94 @@ on:
         required: true
         
 jobs:
-  ECR:
-    name: ECR
-    runs-on: ubuntu-latest
+  # ECR:
+  #   name: ECR
+  #   runs-on: ubuntu-latest
     
-    steps:
-      - uses: actions/checkout@v2
+  #   steps:
+  #     - uses: actions/checkout@v2
       
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-1
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v1
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: eu-west-1
       
-      - name: Create/Verify Amazon ECR repo
-        id: create-ecr-repo
-        uses: int128/create-ecr-repository-action@v1
-        with:
-          repository: ${{ inputs.image }}    
+  #     - name: Create/Verify Amazon ECR repo
+  #       id: create-ecr-repo
+  #       uses: int128/create-ecr-repository-action@v1
+  #       with:
+  #         repository: ${{ inputs.image }}    
 
-      - name: Update ECR Repo Policy
-        id: update-ecr-policy
-        run: |
-          aws ecr set-repository-policy --policy-text ${{ secrets.ECR_REPO_POLICY }}  --repository-name ${{ inputs.image }}
+  #     - name: Update ECR Repo Policy
+  #       id: update-ecr-policy
+  #       run: |
+  #         aws ecr set-repository-policy --policy-text ${{ secrets.ECR_REPO_POLICY }}  --repository-name ${{ inputs.image }}
       
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+  #     - name: Login to Amazon ECR
+  #       id: login-ecr
+  #       uses: aws-actions/amazon-ecr-login@v1
                  
-      - name: Set Default Image Tag
-        id: set_default_tag
-        run: |
-          export GIT_BRANCH=$(echo ${{ github.ref }} | cut -d / -f 3)
-          export GIT_SHORT_SHA=$(git rev-parse --short HEAD)
-          echo ::set-output name=default_tag::${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:$GIT_BRANCH-$GIT_SHORT_SHA-$(date +%s)
+  #     - name: Set Default Image Tag
+  #       id: set_default_tag
+  #       run: |
+  #         export GIT_BRANCH=$(echo ${{ github.ref }} | cut -d / -f 3)
+  #         export GIT_SHORT_SHA=$(git rev-parse --short HEAD)
+  #         echo ::set-output name=default_tag::${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:$GIT_BRANCH-$GIT_SHORT_SHA-$(date +%s)
         
-      - name: Show Default Tag
-        run: echo "${{ steps.set_default_tag.outputs.default_tag }}"
+  #     - name: Show Default Tag
+  #       run: echo "${{ steps.set_default_tag.outputs.default_tag }}"
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+  #     - name: Set up QEMU
+  #       uses: docker/setup-qemu-action@v1
         
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v1
             
-      - name: Docker Build
-        id: docker_build
-        run: |
-          docker build . -t ${{ steps.set_default_tag.outputs.default_tag }}
+  #     - name: Docker Build
+  #       id: docker_build
+  #       run: |
+  #         docker build . -t ${{ steps.set_default_tag.outputs.default_tag }}
 
-      - name: Trivy vulnerability scan
-        uses : aquasecurity/trivy-action@master
-        with :
-          image-ref: "${{ steps.set_default_tag.outputs.default_tag }}"
-          format: 'table'
-          exit-code: ${{ inputs.trivy_exit_code }}
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
+  #     - name: Trivy vulnerability scan
+  #       uses : aquasecurity/trivy-action@master
+  #       with :
+  #         image-ref: "${{ steps.set_default_tag.outputs.default_tag }}"
+  #         format: 'table'
+  #         exit-code: ${{ inputs.trivy_exit_code }}
+  #         ignore-unfixed: true
+  #         vuln-type: 'os,library'
+  #         severity: 'CRITICAL,HIGH'
     
 
-      - name: Push Latest Docker Image to ECR
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-        id: docker_push
-        uses: docker/build-push-action@v2
-        env:
-          IMAGE_TAG_1: ${{ steps.set_default_tag.outputs.default_tag }}
-          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:latest
-        with:
-          push: true
-          tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}}
+  #     - name: Push Latest Docker Image to ECR
+  #       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+  #       id: docker_push
+  #       uses: docker/build-push-action@v2
+  #       env:
+  #         IMAGE_TAG_1: ${{ steps.set_default_tag.outputs.default_tag }}
+  #         IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:latest
+  #       with:
+  #         push: true
+  #         tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}}
 
-      - name: Get Release Tag
-        if: github.event_name == 'release'
-        id: get_tag
-        run: echo ::set-output name=tag::$(echo $GITHUB_REF | cut -d / -f 3)
+  #     - name: Get Release Tag
+  #       if: github.event_name == 'release'
+  #       id: get_tag
+  #       run: echo ::set-output name=tag::$(echo $GITHUB_REF | cut -d / -f 3)
 
-      - name: Push Image with Release Tag to ECR for published release
-        if: github.event_name == 'release' && github.event.action == 'published'
-        id: docker_push_release
-        uses: docker/build-push-action@v2
-        env:
-          IMAGE_TAG_1: ${{ steps.set_default_tag.outputs.default_tag }}
-          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:latest
-          IMAGE_TAG_3: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:${{ steps.get_tag.outputs.tag }}
-        with:
-          push: true
-          tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}},${{env.IMAGE_TAG_3}}
+  #     - name: Push Image with Release Tag to ECR for published release
+  #       if: github.event_name == 'release' && github.event.action == 'published'
+  #       id: docker_push_release
+  #       uses: docker/build-push-action@v2
+  #       env:
+  #         IMAGE_TAG_1: ${{ steps.set_default_tag.outputs.default_tag }}
+  #         IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:latest
+  #         IMAGE_TAG_3: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:${{ steps.get_tag.outputs.tag }}
+  #       with:
+  #         push: true
+  #         tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}},${{env.IMAGE_TAG_3}}
 
   IRSA:
     name: IRSA
@@ -132,7 +132,7 @@ jobs:
           python -m pip install boto3
           python --version
           wget https://raw.githubusercontent.com/mimiro-io/.github/irsa/script/setup-iam.py
-          aws iam list-account-aliases
+          aws sts get-caller-identity
           python setup-iam.py
 
       
