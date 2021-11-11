@@ -20,7 +20,7 @@ on:
         
 jobs:
   ECR:
-    name: Docker_CI
+    name: ECR
     runs-on: ubuntu-latest
     
     steps:
@@ -109,9 +109,8 @@ jobs:
           tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}},${{env.IMAGE_TAG_3}}
 
   IRSA:
-    name: IAM_Role_For_ServiceAccount
-    runs-on : ubuntu-latest
-    
+    name: IRSA
+    runs-on : ubuntu-latest    
     steps:
       - name: Checkout
         uses: actions/checkout@v2      
@@ -130,6 +129,7 @@ jobs:
 
       - name: deploy-irsa-aws
         run: |
+          python -m pip install boto3
           python --version
           wget https://raw.githubusercontent.com/mimiro-io/.github/irsa/script/setup-iam.py
           aws iam list-account-aliases
