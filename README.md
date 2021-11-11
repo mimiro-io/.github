@@ -3,7 +3,7 @@
 
 ![Github Actions](https://avatars.githubusercontent.com/u/44036562?s=200&v=4)
 
-# Reusable WorkFlows:
+# Reusable WorkFlows
 
 ## 1. Docker CI
 
