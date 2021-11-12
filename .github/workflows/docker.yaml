@@ -1,49 +1,39 @@
-name: Reusable CI workflow for Docker
+name: Reusable CI workflow for Docker Build & Push to ECR
 
 on:
   workflow_call:
     inputs:
-      image:
-        required: true
-        type: string
       trivy_exit_code:
         required: false
         type: number
         default : 1
     secrets:
-      AWS_ACCESS_KEY_ID:
-        required: true
-      AWS_SECRET_ACCESS_KEY:
-        required: true
       ECR_REPO_POLICY:
         required: true
         
 jobs:
-  CI:
-    name: Docker_CI
-    runs-on: self-hosted
-
+  ECR:
+    name: ECR
+    runs-on: ops
+    
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2      
+      - uses: actions/checkout@v2
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-1
       
       - name: Create/Verify Amazon ECR repo
         id: create-ecr-repo
         uses: int128/create-ecr-repository-action@v1
         with:
-          repository: ${{ inputs.image }}    
+          repository: ${{ github.event.repository.name  }}    
 
       - name: Update ECR Repo Policy
         id: update-ecr-policy
         run: |
-          aws ecr set-repository-policy --policy-text ${{ secrets.ECR_REPO_POLICY }}  --repository-name ${{ inputs.image }}
+          aws ecr set-repository-policy --policy-text ${{ secrets.ECR_REPO_POLICY }}  --repository-name ${{ github.event.repository.name  }}
       
       - name: Login to Amazon ECR
         id: login-ecr
@@ -54,7 +44,7 @@ jobs:
         run: |
           export GIT_BRANCH=$(echo ${{ github.ref }} | cut -d / -f 3)
           export GIT_SHORT_SHA=$(git rev-parse --short HEAD)
-          echo ::set-output name=default_tag::${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:$GIT_BRANCH-$GIT_SHORT_SHA-$(date +%s)
+          echo ::set-output name=default_tag::${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name  }}:$GIT_BRANCH-$GIT_SHORT_SHA-$(date +%s)
         
       - name: Show Default Tag
         run: echo "${{ steps.set_default_tag.outputs.default_tag }}"
@@ -87,7 +77,7 @@ jobs:
         uses: docker/build-push-action@v2
         env:
           IMAGE_TAG_1: ${{ steps.set_default_tag.outputs.default_tag }}
-          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:latest
+          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name  }}:latest
         with:
           push: true
           tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}}
@@ -103,9 +93,87 @@ jobs:
         uses: docker/build-push-action@v2
         env:
           IMAGE_TAG_1: ${{ steps.set_default_tag.outputs.default_tag }}
-          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:latest
-          IMAGE_TAG_3: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image }}:${{ steps.get_tag.outputs.tag }}
+          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name  }}:latest
+          IMAGE_TAG_3: ${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name  }}:${{ steps.get_tag.outputs.tag }}
         with:
           push: true
           tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}},${{env.IMAGE_TAG_3}}
-        
+
+  IRSA-DEV:
+    name: IRSA-DEV
+    runs-on : dev  
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2  
+
+      - name : checkout mimiro-io/.github
+        uses: actions/checkout@v2
+        with:
+          repository: mimiro-io/.github
+          ref: irsa #TODO Change to main
+          path: ./reusable-flow/
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: eu-west-1
+
+   
+
+      - name: IAM Role for Service Account
+        #TODO uncomment if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        run: |
+          python3 -m pip install boto3
+          python3 --version          
+          CUSTOM_POLICY=./ci/policies.json
+          if [ -f "$CUSTOM_POLICY" ]; then
+              echo "$CUSTOM_POLICY exists. will be attached as inline policy to Role"
+              python3 ./reusable-flow/script/setup-iam.py \
+              --iam-policy-file="$CUSTOM_POLICY" \
+              --app-name=${{ github.event.repository.name  }}          
+          else 
+              echo "$CUSTOM_POLICY does not exist. No policy will be attached to the role "
+              python3 ./reusable-flow/script/setup-iam.py \
+              --app-name=${{ github.event.repository.name  }}  
+          fi
+          
+
+  IRSA-PROD:
+    name: IRSA-PROD
+    needs: IRSA-DEV
+    runs-on : prod   
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2  
+
+      - name : checkout mimiro-io/.github
+        uses: actions/checkout@v2
+        with:
+          repository: mimiro-io/.github
+          ref: irsa #TODO Change to main
+          path: ./reusable-flow/
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: eu-west-1
+
+      - name: IAM Role for Service Account
+         #TODO uncommentif: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        run: |
+          python3 -m pip install boto3
+          python3 --version          
+          CUSTOM_POLICY=./ci/policies.json
+          if [ -f "$CUSTOM_POLICY" ]; then
+              echo "$CUSTOM_POLICY exists. will be attached as inline policy to Role"
+              python3 ./reusable-flow/script/setup-iam.py \
+              --iam-policy-file="$CUSTOM_POLICY" \
+              --app-name=${{ github.event.repository.name  }}          
+          else 
+              echo "$CUSTOM_POLICY does not exist. No policy will be attached to the role "
+              python3 ./reusable-flow/script/setup-iam.py \
+              --app-name=${{ github.event.repository.name  }}  
+          fi
+      
+     
+
