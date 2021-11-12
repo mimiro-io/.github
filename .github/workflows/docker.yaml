@@ -135,18 +135,19 @@ jobs:
           architecture: 'x64'
 
       - name: IAM Role for Service Account
-        env:
-          APP: ${{ inputs.image }}
         run: |
           python -m pip install boto3
           python --version          
-          CUSTOM_POLICY=./ci/policies.json2
+          CUSTOM_POLICY=./ci/policies.json
           if [ -f "$CUSTOM_POLICY" ]; then
               echo "$CUSTOM_POLICY exists. will be attached as inline policy to Role"
-              python ./reusable-flow/script/setup-iam.py "$CUSTOM_POLICY"             
+              python ./reusable-flow/script/setup-iam.py \
+              --iam-policy-file="$CUSTOM_POLICY" \
+              --app-name=${{ inputs.image }}          
           else 
               echo "$CUSTOM_POLICY does not exist. No policy will be attached to the role "
-              python ./reusable-flow/script/setup-iam.py
+              python ./reusable-flow/script/setup-iam.py \
+              --app-name=${{ inputs.image }}  
           fi
           
       
