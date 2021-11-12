@@ -134,7 +134,7 @@ jobs:
           python-version: '3.x' 
           architecture: 'x64'
 
-      - name: deploy-irsa-aws
+      - name: IAM Role for Service Account
         env:
           APP: ${{ inputs.image }}
         run: |
