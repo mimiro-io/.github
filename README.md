@@ -22,7 +22,7 @@ on:
       - published
 jobs:
   K8S:
-    uses: mimiro-io/.github/.github/workflows/docker.yaml@irsa
+    uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     secrets:
       ECR_REPO_POLICY: ${{ secrets.ECR_REPO_POLICY }}
 ```
