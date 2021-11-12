@@ -146,7 +146,7 @@ jobs:
               echo "$CUSTOM_POLICY exists. attaching as inline policy to Role"
               aws iam put-role-policy \
                 --role-name mimiro-k8s-${{ inputs.image }}-role \
-                --policy-name k8s 
+                --policy-name k8s \
                 --policy-document file://"$CUSTOM_POLICY"
           else 
               echo "$CUSTOM_POLICY does not exist. No policy will be attached to the role "
