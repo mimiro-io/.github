@@ -54,8 +54,7 @@ def main():
 
     account_id = boto3.client('sts').get_caller_identity().get('Account')
     
-    print('IRSA:',role_name, ':Setup IAM Role & Policy for the k8s service account.',
-        'AWS Account :',account_id)
+    print('IRSA:',role_name, ': Setup IAM Role & Policy for the k8s service account')
     iam_client = boto3.client('iam')
     assume_role_policy=get_assume_role_policy(account_id,app_name,k8s_namespace)
 
