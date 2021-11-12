@@ -2,6 +2,11 @@ import json
 import boto3
 import os
 from botocore.exceptions import ClientError
+import argparse
+parser=argparse.ArgumentParser()
+parser.add_argument('--app-name', help='Name of the application')
+parser.add_argument('--iam-policy-file', help='path of the policy json file')
+args=parser.parse_args()
 
 #IRSA = IAM Role for Service Account
 def get_eks_oidc():
@@ -42,13 +47,33 @@ def get_assume_role_policy(account_id,app_name,k8s_namespace):
     }
     return json.dumps(trust_relationship_policy)
 
-def main():
-    if 'APP' not in os.environ:
-        print ("Error! Could not fetch `APP` environment variable, exiting.. ")
+def attach_policy(account_id,role_name,policy_document_file):
+    iam_client = boto3.client('iam')
+    # Opening Policy File
+    json_file=open(policy_document_file)
+    policy_document=json.dumps(json.load(json_file))
+    #Remove terraform characters for account_id.(if there are any)
+    policy_document=policy_document.replace("${data.aws_caller_identity.current.account_id}",account_id)
+    try:
+        response = iam_client.put_role_policy(
+            RoleName=role_name,
+            PolicyName='k8s',
+            PolicyDocument=policy_document
+        )
+    except ClientError as error:
+        print ("ERROR attaching policy", error)
+        json_file.close()
         exit(1)
-    else:
-        app_name = os.environ.get('APP')
+    print ('IRSA:',role_name,': Policy successfully updated')
+    json_file.close()
+    
 
+def main():
+    app_name=args.app_name
+    iam_policy_file=args.iam_policy_file
+    if app_name is None:
+        print ("Error! Pls provide app name in --app-name")
+        exit(1)
     role_name = "mimiro-k8s-"+app_name+"-role" ## TODO- Get prefix from eks cluster name
     k8s_namespace = 'mimiro' #TODO remove hardcoding
 
@@ -60,7 +85,7 @@ def main():
 
     try:
         response = iam_client.get_role(RoleName=role_name)
-        print ('IRSA:',role_name,': Role exists! updating existing role and policy')
+        print ('IRSA:',role_name,': Role exists! updating existing role')
         try:
             response = iam_client.update_assume_role_policy(
                 RoleName=role_name,
@@ -70,6 +95,9 @@ def main():
             print('IRSA:',role_name, ': Unexpected error occurred... Role could not be updated', error)
             exit(1)
         print('IRSA:',role_name, ': Role successfully updated')
+        if iam_policy_file is not None:
+            print('IRSA:',role_name, ': Updating IAM Policy')
+            attach_policy(account_id,role_name,iam_policy_file)   
     except ClientError as error:
         if error.response['Error']['Code'] == 'NoSuchEntity':
             print ('IRSA:',role_name,': Role does not exist.Creating new role and policy')
@@ -89,7 +117,11 @@ def main():
             except ClientError as error:
                 print('IRSA:',role_name, ': Unexpected error occurred... Role could not be created', error)
                 exit(1)
+
             print('IRSA:',role_name, ': Role Successfully Created')
+            if iam_policy_file is not None:
+                print('IRSA:',role_name, ': Updating IAM Policy')
+                attach_policy(account_id,role_name,iam_policy_file)
 
 if __name__ == '__main__':
     main()
