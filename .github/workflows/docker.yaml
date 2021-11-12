@@ -128,12 +128,14 @@ jobs:
           architecture: 'x64'
 
       - name: deploy-irsa-aws
+        env:
+          APP: ${{ inputs.image }}
         run: |
           python -m pip install boto3
           python --version
           wget https://raw.githubusercontent.com/mimiro-io/.github/irsa/script/setup-iam.py
           aws sts get-caller-identity
-          python setup-iam.py
+          python setup-iam.py 
 
       
      
