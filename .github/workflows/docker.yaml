@@ -14,7 +14,7 @@ on:
 jobs:
   ECR:
     name: ECR
-    runs-on: ubuntu-latest
+    runs-on: ops
     
     steps:
       - uses: actions/checkout@v2
@@ -101,7 +101,7 @@ jobs:
 
   IRSA-DEV:
     name: IRSA-DEV
-    runs-on : ubuntu-latest    
+    runs-on : dev  
     steps:
       - name: Checkout
         uses: actions/checkout@v2  
@@ -144,7 +144,7 @@ jobs:
   IRSA-PROD:
     name: IRSA-PROD
     needs: IRSA-DEV
-    runs-on : ubuntu-latest    
+    runs-on : prod   
     steps:
       - name: Checkout
         uses: actions/checkout@v2  
