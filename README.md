@@ -8,10 +8,12 @@
 ## 1. Docker CI
 
 This workflow uses your Dockerfile and build the image and pushes it to AWS ECR.
-If you wish to use this workflow, just create a tiny yaml in your repo (i.e. `.github/workflows/ci.yaml`)and paste below content.
+Also configures ![IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html)
+
+If you wish to use this workflow, just create a tiny yaml file in your repo (i.e. `.github/workflows/ci.yaml`)and paste below content.
 
 ```yaml
-name: K8S-CI
+name: CI
 on:
   push:
     branches: [ master ]
@@ -32,7 +34,7 @@ jobs:
 Add the following to your repo's README.md (replace `repo-name` with the actual repo name):
 
 ```sh
-[![K8S-CI](https://github.com/mimiro-io/repo-name/actions/workflows/ci.yml/badge.svg)](https://github.com/mimiro-io/repo-name/actions/workflows/ci.yml)
+[![CI](https://github.com/mimiro-io/repo-name/actions/workflows/ci.yaml/badge.svg)](https://github.com/mimiro-io/repo-name/actions/workflows/ci.yaml)
 ```
 
 ### Add a custom IAM policy to your application
