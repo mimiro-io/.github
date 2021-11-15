@@ -23,7 +23,7 @@ on:
     types:
       - published
 jobs:
-  K8S:
+  AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     secrets:
       ECR_REPO_POLICY: ${{ secrets.ECR_REPO_POLICY }}
