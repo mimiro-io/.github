@@ -32,8 +32,54 @@ jobs:
 Add the following to your repo's README.md (replace `repo-name` with the actual repo name):
 
 ```sh
-[![CI](https://github.com/mimiro-io/repo-name/actions/workflows/ci.yaml/badge.svg)](https://github.com/mimiro-io/repo-name/actions/workflows/ci.yaml)
+[![K8S-CI](https://github.com/mimiro-io/repo-name/actions/workflows/ci.yml/badge.svg)](https://github.com/mimiro-io/repo-name/actions/workflows/ci.yml)
 ```
+
+### Add a custom IAM policy to your application
+
+If your app/service needs access to any AWS Service, for example S3, SSM Parameter store, just have all your permissions in `./ci/policies.json` file.
+
+https://awspolicygen.s3.amazonaws.com/policygen.html can be used to create IAM polices.
+
+> Make sure, never mention account number in policies stored in GitHub. Just use `${AWS_ACCOUNT_ID}` variable. This CI workflow will populate it for you while deploying. 
+
+### example policy
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "s3:*",
+            "Resource": [
+                "arn:aws:s3:::my-s3-bucket",
+                "arn:aws:s3:::my-s3-bucket/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ssm:PutParameter",
+                "secretsmanager:GetSecretValue",
+                "ssm:GetParametersByPath",
+                "ssm:GetParameters",
+                "ssm:GetParameter",
+                "ssm:DeleteParameters"
+            ],
+            "Resource": [
+                "arn:aws:ssm:eu-west-1:${AWS_ACCOUNT_ID}:parameter/shared/*",
+                "arn:aws:ssm:eu-west-1:${AWS_ACCOUNT_ID}:parameter/application/my-app/*",
+                "arn:aws:secretsmanager:eu-west-1:${AWS_ACCOUNT_ID}:secret:/application/my-app/db-user",
+                "arn:aws:secretsmanager:eu-west-1:${AWS_ACCOUNT_ID}:secret:/application/my-app/dbpass"
+            ]
+        }
+    ]
+}
+
+```
+
+
 
 ### Ignore Trivy Scan errors
 

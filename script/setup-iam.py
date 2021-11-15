@@ -52,8 +52,13 @@ def attach_policy(account_id,role_name,policy_document_file):
     # Opening Policy File
     json_file=open(policy_document_file)
     policy_document=json.dumps(json.load(json_file))
+    
     #Remove terraform characters for account_id.(if there are any)
     policy_document=policy_document.replace("${data.aws_caller_identity.current.account_id}",account_id)
+    
+    #Populate Account Number
+    policy_document=policy_document.replace("${AWS_ACCOUNT_ID}",account_id)
+
     try:
         response = iam_client.put_role_policy(
             RoleName=role_name,
