@@ -79,7 +79,7 @@ def main():
     if app_name is None:
         print ("Error! Pls provide app name in --app-name")
         exit(1)
-    role_name = "mimiro-k8s-"+app_name+"-role" ## TODO- Get prefix from eks cluster name
+    role_name = "mimiro-k8s-"+app_name ## TODO- Get prefix from eks cluster name
     k8s_namespace = 'mimiro' #TODO remove hardcoding
 
     account_id = boto3.client('sts').get_caller_identity().get('Account')
