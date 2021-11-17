@@ -63,25 +63,21 @@ https://awspolicygen.s3.amazonaws.com/policygen.html can be used to create IAM p
             "Effect": "Allow",
             "Action": [
                 "ssm:PutParameter",
-                "secretsmanager:GetSecretValue",
                 "ssm:GetParametersByPath",
                 "ssm:GetParameters",
                 "ssm:GetParameter",
                 "ssm:DeleteParameters"
             ],
             "Resource": [
-                "arn:aws:ssm:eu-west-1:${AWS_ACCOUNT_ID}:parameter/shared/*",
-                "arn:aws:ssm:eu-west-1:${AWS_ACCOUNT_ID}:parameter/application/my-app/*",
-                "arn:aws:secretsmanager:eu-west-1:${AWS_ACCOUNT_ID}:secret:/application/my-app/db-user",
-                "arn:aws:secretsmanager:eu-west-1:${AWS_ACCOUNT_ID}:secret:/application/my-app/dbpass"
+                "arn:aws:ssm:eu-west-1:${AWS_ACCOUNT_ID}:parameter/application/app-name/*",
+                "arn:aws:ssm:eu-west-1:${AWS_ACCOUNT_ID}:parameter/application/shared/*",
+                "arn:aws:ssm:eu-west-1:${AWS_ACCOUNT_ID}:parameter/shared/*"
             ]
         }
     ]
 }
 
 ```
-
-
 
 ### Ignore Trivy Scan errors
 
