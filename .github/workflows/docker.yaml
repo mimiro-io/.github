@@ -29,18 +29,17 @@ jobs:
         uses: int128/create-ecr-repository-action@v1
         with:
           repository: ${{ github.event.repository.name  }}  
-          lifecycle-policy: "{\"rules\":[{\"rulePriority\":1,\"description\":\"Expire untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countUnit\":\"days\",\"countNumber\":1},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Expire old images with default tag\",\"selection\":{\"tagStatus\":\"tagged\",\"tagPrefixList\":[\"master-\"],\"countType\":\"imageCountMoreThan\",\"countNumber\":50},\"action\":{\"type\":\"expire\"}}]}"
 
       - name: Update ECR Repo Policy
         id: update-ecr-repo-policy
         run: |
           aws ecr set-repository-policy --policy-text ${{ secrets.ECR_REPO_POLICY }}  --repository-name ${{ github.event.repository.name  }}
       
-      # - name: Update ECR Lifecycle Policy
-      #   id: update-ecr-lifecycle-policy
-      #   run: |
-      #     aws ecr put-lifecycle-policy --repository-name podinfo --lifecycle-policy-text \
-      #       "{\"rules\":[{\"rulePriority\":1,\"description\":\"Expire untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countUnit\":\"days\",\"countNumber\":1},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Expire old images with default tag\",\"selection\":{\"tagStatus\":\"tagged\",\"tagPrefixList\":[\"master-\"],\"countType\":\"imageCountMoreThan\",\"countNumber\":50},\"action\":{\"type\":\"expire\"}}]}",
+      - name: Update ECR Lifecycle Policy
+        id: update-ecr-lifecycle-policy
+        run: |
+          aws ecr put-lifecycle-policy --repository-name podinfo --lifecycle-policy-text \
+            "{\"rules\":[{\"rulePriority\":1,\"description\":\"Expire untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countUnit\":\"days\",\"countNumber\":1},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Expire old images with default tag\",\"selection\":{\"tagStatus\":\"tagged\",\"tagPrefixList\":[\"master-\"],\"countType\":\"imageCountMoreThan\",\"countNumber\":50},\"action\":{\"type\":\"expire\"}}]}",
 
 
       - name: Login to Amazon ECR
