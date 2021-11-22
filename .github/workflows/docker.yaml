@@ -38,7 +38,7 @@ jobs:
       - name: Update ECR Lifecycle Policy
         id: update-ecr-lifecycle-policy
         run: |
-          aws ecr put-lifecycle-policy --repository-name podinfo --lifecycle-policy-text \
+          aws ecr put-lifecycle-policy --repository-name ${{ github.event.repository.name  }} --lifecycle-policy-text \
             "{\"rules\":[{\"rulePriority\":1,\"description\":\"Expire untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countUnit\":\"days\",\"countNumber\":1},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Expire old images with default tag\",\"selection\":{\"tagStatus\":\"tagged\",\"tagPrefixList\":[\"master-\"],\"countType\":\"imageCountMoreThan\",\"countNumber\":50},\"action\":{\"type\":\"expire\"}}]}",
 
 
