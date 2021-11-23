@@ -3,6 +3,11 @@ name: Reusable CI workflow for Docker Build & Push to ECR
 on:
   workflow_call:
     inputs:
+      name: 
+        description: "Application Name (Default is the github repo name)"
+        required: false
+        type: string
+        default: ${{ github.event.repository.name  }}
       trivy_exit_code:
         required: false
         type: number
@@ -28,17 +33,17 @@ jobs:
         id: create-ecr-repo
         uses: int128/create-ecr-repository-action@v1
         with:
-          repository: ${{ github.event.repository.name  }}  
+          repository: ${{ inputs.name  }}  
 
       - name: Update ECR Repo Policy
         id: update-ecr-repo-policy
         run: |
-          aws ecr set-repository-policy --policy-text ${{ secrets.ECR_REPO_POLICY }}  --repository-name ${{ github.event.repository.name  }}
+          aws ecr set-repository-policy --policy-text ${{ secrets.ECR_REPO_POLICY }}  --repository-name ${{ inputs.name  }}
       
       - name: Update ECR Lifecycle Policy
         id: update-ecr-lifecycle-policy
         run: |
-          aws ecr put-lifecycle-policy --repository-name ${{ github.event.repository.name  }} --lifecycle-policy-text \
+          aws ecr put-lifecycle-policy --repository-name ${{ inputs.name  }} --lifecycle-policy-text \
             "{\"rules\":[{\"rulePriority\":1,\"description\":\"Expire untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countUnit\":\"days\",\"countNumber\":1},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Expire old images with default tag\",\"selection\":{\"tagStatus\":\"tagged\",\"tagPrefixList\":[\"master-\"],\"countType\":\"imageCountMoreThan\",\"countNumber\":50},\"action\":{\"type\":\"expire\"}}]}",
 
 
@@ -51,7 +56,7 @@ jobs:
         run: |
           export GIT_BRANCH=$(echo ${{ github.ref }} | cut -d / -f 3)
           export GIT_SHORT_SHA=$(git rev-parse --short HEAD)
-          echo ::set-output name=default_tag::${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name  }}:$GIT_BRANCH-$GIT_SHORT_SHA-$(date +%s)
+          echo ::set-output name=default_tag::${{ steps.login-ecr.outputs.registry }}/${{ inputs.name  }}:$GIT_BRANCH-$GIT_SHORT_SHA-$(date +%s)
         
       - name: Show Default Tag
         run: echo "${{ steps.set_default_tag.outputs.default_tag }}"
@@ -84,7 +89,7 @@ jobs:
         uses: docker/build-push-action@v2
         env:
           IMAGE_TAG_1: ${{ steps.set_default_tag.outputs.default_tag }}
-          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name  }}:latest
+          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.name  }}:latest
         with:
           push: true
           tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}}
@@ -100,8 +105,8 @@ jobs:
         uses: docker/build-push-action@v2
         env:
           IMAGE_TAG_1: ${{ steps.set_default_tag.outputs.default_tag }}
-          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name  }}:latest
-          IMAGE_TAG_3: ${{ steps.login-ecr.outputs.registry }}/${{ github.event.repository.name  }}:${{ steps.get_tag.outputs.tag }}
+          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.name  }}:latest
+          IMAGE_TAG_3: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.name  }}:${{ steps.get_tag.outputs.tag }}
         with:
           push: true
           tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}},${{env.IMAGE_TAG_3}}
@@ -137,11 +142,11 @@ jobs:
               echo "$CUSTOM_POLICY exists. will be attached as inline policy to Role"
               python3 ./reusable-flow/script/setup-iam.py \
               --iam-policy-file="$CUSTOM_POLICY" \
-              --app-name=${{ github.event.repository.name  }}          
+              --app-name=${{ inputs.name  }}          
           else 
               echo "$CUSTOM_POLICY does not exist. No policy will be attached to the role "
               python3 ./reusable-flow/script/setup-iam.py \
-              --app-name=${{ github.event.repository.name  }}  
+              --app-name=${{ inputs.name  }}  
           fi
           
 
@@ -175,11 +180,11 @@ jobs:
               echo "$CUSTOM_POLICY exists. will be attached as inline policy to Role"
               python3 ./reusable-flow/script/setup-iam.py \
               --iam-policy-file="$CUSTOM_POLICY" \
-              --app-name=${{ github.event.repository.name  }}          
+              --app-name=${{ inputs.name  }}          
           else 
               echo "$CUSTOM_POLICY does not exist. No policy will be attached to the role "
               python3 ./reusable-flow/script/setup-iam.py \
-              --app-name=${{ github.event.repository.name  }}  
+              --app-name=${{ inputs.name  }}  
           fi
         
 
