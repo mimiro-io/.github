@@ -4,14 +4,25 @@ on:
   workflow_call:
     inputs:
       name: 
-        description: "Application Name (Default is the github repo name)"
+        description: "Application Name overwrite (Default is the github repo name)"
         required: false
         type: string
         default: ${{ github.event.repository.name  }}
       trivy_exit_code:
+        description: "if set to 0, workflow will ignore trivy scan errors.(not recommended)"
         required: false
         type: number
         default : 1
+      skip_docker:
+        description: "if set to true, workflow will skip docker build and ECR push"
+        required: false
+        type: number
+        default : false
+      skip_irsa:
+        description: "if set to true, workflow will skip IRSA"
+        required: false
+        type: number
+        default : false
     secrets:
       ECR_REPO_POLICY:
         required: true
@@ -20,7 +31,7 @@ jobs:
   ECR:
     name: ECR
     runs-on: ops
-    
+    if : inputs.skip_docker == false
     steps:
       - uses: actions/checkout@v2
       
@@ -114,6 +125,7 @@ jobs:
   IRSA-DEV:
     name: IRSA-DEV
     runs-on : dev  
+    if : inputs.skip_irsa == false
     steps:
       - name: Checkout
         uses: actions/checkout@v2  
@@ -154,6 +166,7 @@ jobs:
     name: IRSA-PROD
     needs: IRSA-DEV
     runs-on : prod   
+    if : inputs.skip_irsa == false
     steps:
       - name: Checkout
         uses: actions/checkout@v2  
