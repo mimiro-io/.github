@@ -150,10 +150,7 @@ jobs:
       - name: Validate IAM Policy Json
         run: |
           if [ -f ${{ inputs.iam_policies_json_file }} ]; then
-              aws accessanalyzer validate-policy \
-                --policy-type RESOURCE_POLICY \
-                --policy-document ${{ inputs.iam_policies_json_file }}
-
+              aws accessanalyzer validate-policy --policy-type RESOURCE_POLICY --policy-document ${{ inputs.iam_policies_json_file }}
           else 
               echo "IAM Policy does not exist. skipping validation"              
           fi   
@@ -200,9 +197,7 @@ jobs:
       - name: Validate IAM Policy Json
         run: |
           if [ -f ${{ inputs.iam_policies_json_file }} ]; then
-              aws accessanalyzer validate-policy \
-                --policy-type RESOURCE_POLICY \
-                --policy-document ${{ inputs.iam_policies_json_file }}
+              aws accessanalyzer validate-policy --policy-type RESOURCE_POLICY --policy-document ${{ inputs.iam_policies_json_file }}
           else 
               echo "IAM Policy does not exist. skipping validation"              
           fi  
