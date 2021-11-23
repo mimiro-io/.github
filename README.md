@@ -45,7 +45,7 @@ https://awspolicygen.s3.amazonaws.com/policygen.html can be used to create IAM p
 
 > Make sure, never mention account number in policies stored in GitHub. Just use `${AWS_ACCOUNT_ID}` variable. This CI workflow will populate it for you while deploying. 
 
-### example policy
+### example IAM policy
 
 ```json
 {
@@ -92,6 +92,21 @@ jobs:
   DockerBuildPush:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
-      image: ${{ github.event.repository.name }}  # Name of the Docker Image (without tags and registery name)
       trivy_exit_code : 0
+```
+
+### Custom Name for App & Image Repository
+
+By default, your github repo name is used everywhere for naming resources.  
+
+However, if you wish to have a custom name for your project then you can override this by using `name` parameter.
+
+Example usage:  
+
+```yaml
+jobs:
+  DockerBuildPush:
+    uses: mimiro-io/.github/.github/workflows/docker.yaml@main
+    with:
+      name : "my-app"
 ```
