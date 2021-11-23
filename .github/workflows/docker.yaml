@@ -23,6 +23,11 @@ on:
         required: false
         type: boolean
         default : false
+      iam_policies_json_file:
+        description: "relative path to iam policy json"
+        required: false
+        type: string
+        default : './ci/policies.json'
     secrets:
       ECR_REPO_POLICY:
         required: true
@@ -183,14 +188,23 @@ jobs:
         with:
           aws-region: eu-west-1
 
+      - name: Validate IAM Policy Json
+        run: |
+          if [ -f ${{ inputs.iam_policies_json_file }} ]; then
+              echo "IAM policy exists. will be attached as inline policy to Role" 
+              cat ${{ inputs.iam_policies_json_file }}
+          else 
+              echo "$CUSTOM_POLICY does not exist. No policy will be attached to the role "
+              cat ${{ inputs.iam_policies_json_file }}
+          fi
+          
       - name: IAM Role for Service Account
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         run: |
           python3 -m pip install boto3
-          python3 --version          
-          CUSTOM_POLICY=./ci/policies.json
-          if [ -f "$CUSTOM_POLICY" ]; then
-              echo "$CUSTOM_POLICY exists. will be attached as inline policy to Role"
+          python3 --version 
+          if [ -f ${{ inputs.iam_policies_json_file }} ]; then
+              echo "IAM policy exists. will be attached as inline policy to Role"
               python3 ./reusable-flow/script/setup-iam.py \
               --iam-policy-file="$CUSTOM_POLICY" \
               --app-name=${{ inputs.name  }}          
