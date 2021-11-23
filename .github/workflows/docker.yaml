@@ -146,8 +146,16 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: eu-west-1
-
-   
+     
+      - name: Validate IAM Policy Json
+        run: |
+          if [ -f ${{ inputs.iam_policies_json_file }} ]; then
+              echo "IAM policy exists. will be attached as inline policy to Role" 
+              cat ${{ inputs.iam_policies_json_file }}
+          else 
+              echo "$CUSTOM_POLICY does not exist. No policy will be attached to the role "
+              cat ${{ inputs.iam_policies_json_file }}
+          fi   
 
       - name: IAM Role for Service Account
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
@@ -197,7 +205,7 @@ jobs:
               echo "$CUSTOM_POLICY does not exist. No policy will be attached to the role "
               cat ${{ inputs.iam_policies_json_file }}
           fi
-          
+
       - name: IAM Role for Service Account
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         run: |
