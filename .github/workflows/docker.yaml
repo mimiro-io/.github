@@ -16,12 +16,12 @@ on:
       skip_docker:
         description: "if set to true, workflow will skip docker build and ECR push"
         required: false
-        type: number
+        type: boolean
         default : false
       skip_irsa:
         description: "if set to true, workflow will skip IRSA"
         required: false
-        type: number
+        type: boolean
         default : false
     secrets:
       ECR_REPO_POLICY:
