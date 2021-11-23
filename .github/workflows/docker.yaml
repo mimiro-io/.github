@@ -24,7 +24,7 @@ on:
         type: boolean
         default : false
       iam_policies_json_file:
-        description: "relative path to iam policy json"
+        description: "relative path to iam policy json. default is ./ci/policies.json"
         required: false
         type: string
         default : './ci/policies.json'
@@ -150,11 +150,12 @@ jobs:
       - name: Validate IAM Policy Json
         run: |
           if [ -f ${{ inputs.iam_policies_json_file }} ]; then
-              echo "IAM policy exists. will be attached as inline policy to Role" 
-              cat ${{ inputs.iam_policies_json_file }}
+              aws accessanalyzer validate-policy \
+                --policy-type RESOURCE_POLICY \
+                --policy-document ${{ inputs.iam_policies_json_file }}
+
           else 
-              echo "$CUSTOM_POLICY does not exist. No policy will be attached to the role "
-              cat ${{ inputs.iam_policies_json_file }}
+              echo "IAM Policy does not exist. skipping validation"              
           fi   
 
       - name: IAM Role for Service Account
@@ -199,12 +200,12 @@ jobs:
       - name: Validate IAM Policy Json
         run: |
           if [ -f ${{ inputs.iam_policies_json_file }} ]; then
-              echo "IAM policy exists. will be attached as inline policy to Role" 
-              cat ${{ inputs.iam_policies_json_file }}
+              aws accessanalyzer validate-policy \
+                --policy-type RESOURCE_POLICY \
+                --policy-document ${{ inputs.iam_policies_json_file }}
           else 
-              echo "$CUSTOM_POLICY does not exist. No policy will be attached to the role "
-              cat ${{ inputs.iam_policies_json_file }}
-          fi
+              echo "IAM Policy does not exist. skipping validation"              
+          fi  
 
       - name: IAM Role for Service Account
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
