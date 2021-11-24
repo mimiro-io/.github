@@ -110,3 +110,31 @@ jobs:
     with:
       name : "my-app"
 ```
+
+### Skip IRSA or Docker ECR
+
+By default all the jobs in this workflow are executed. In case you wish to skip any or all of the jobs, it can be done by providing `true` to `skip_irsa` and/or `skip_ecr` when calling to this common workflow.
+
+Example usage:  
+
+```yaml
+jobs:
+  DockerBuildPush:
+    uses: mimiro-io/.github/.github/workflows/docker.yaml@main
+    with:
+      skip_ecr : true
+```
+
+### Custom Path/File name for IRSA's IAM Policy Json
+
+By default,IAM Policy Json file is reffered from ci/policies.json. It possible to provide custom path/file name by using the `iam_policies_json_file`. Pls provide the absoulte path of this file from the root of your git repository.
+
+Example usage:  
+
+```yaml
+jobs:
+  DockerBuildPush:
+    uses: mimiro-io/.github/.github/workflows/docker.yaml@main
+    with:
+      iam_policies_json_file : iam/json/my-iam.json
+```
