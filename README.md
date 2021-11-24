@@ -111,9 +111,9 @@ jobs:
       name : "my-app"
 ```
 
-### Skip IRSA or Docker ECR
+### Skip IRSA or Docker (ECR) Jobs
 
-By default all the jobs in this workflow are executed. In case you wish to skip any or all of the jobs, it can be done by providing `true` to `skip_irsa` and/or `skip_ecr` when calling to this common workflow.
+By default all the jobs in this workflow are executed. In case you wish to skip any or all of the jobs, it can be done by providing `true` to `skip_irsa` and/or `skip_docker` when calling to this common workflow.
 
 Example usage:  
 
@@ -122,7 +122,7 @@ jobs:
   DockerBuildPush:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
-      skip_ecr : true
+      skip_docker : true
 ```
 
 ### Custom Path/File name for IRSA's IAM Policy Json
