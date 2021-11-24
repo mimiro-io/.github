@@ -151,9 +151,9 @@ jobs:
         run: |
             if [ -f ${{ inputs.iam_policies_json_file }} ]; then              
               
-              validation_result=aws accessanalyzer validate-policy \
+              validation_result=$(aws accessanalyzer validate-policy \
                  --policy-type IDENTITY_POLICY \
-                 --policy-document ${{ inputs.iam_policies_json_file }}
+                 --policy-document ${{ inputs.iam_policies_json_file }} )
 
               if [ echo $validation_result | grep ERROR ]; then
                 echo "ERRORs in policy file ${{ inputs.iam_policies_json_file }}"
@@ -161,7 +161,7 @@ jobs:
               else
                 echo "Policy. Okay!"
               fi
-              
+
             else 
               echo "IAM Policy does not exist. skipping validation"              
             fi   
