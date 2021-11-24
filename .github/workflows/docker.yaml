@@ -149,14 +149,19 @@ jobs:
      
       - name: Validate IAM Policy Json
         run: |
-          aws --version
-          aws accessanalyzer help
-
-          if [ -f ${{ inputs.iam_policies_json_file }} ]; then
-              aws accessanalyzer validate-policy --policy-type RESOURCE_POLICY --policy-document file://ci/policies.json
-          else 
+            if [ -f ${{ inputs.iam_policies_json_file }} ]; then              
+              validation_result = aws accessanalyzer validate-policy \
+                 --policy-type IDENTITY_POLICY 
+                 --policy-document ${{ inputs.iam_policies_json_file }}
+              if [ echo $validation_result | grep ERROR ]; then
+                echo "ERRORs in policy file ${{ inputs.iam_policies_json_file }}"
+                echo $validation_result
+              else
+                echo "Policy. Okay!"
+              fi
+            else 
               echo "IAM Policy does not exist. skipping validation"              
-          fi   
+            fi   
 
       - name: IAM Role for Service Account
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
