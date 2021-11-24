@@ -127,7 +127,7 @@ jobs:
 
 ### Custom Path/File name for IRSA's IAM Policy Json
 
-By default,IAM Policy Json file is reffered from ci/policies.json. It possible to provide custom path/file name by using the `iam_policies_json_file`. Pls provide the absoulte path of this file from the root of your git repository.
+By default,IAM Policy Json file is referred from ci/policies.json. It possible to provide custom path/file name by using the `iam_policies_json_file`. Pls provide the absoulte path of this file from the root of your git repository.
 
 Example usage:  
 
