@@ -45,7 +45,7 @@ https://awspolicygen.s3.amazonaws.com/policygen.html can be used to create IAM p
 
 > Make sure, never mention account number in policies stored in GitHub. Just use `${AWS_ACCOUNT_ID}` variable. This CI workflow will populate it for you while deploying. 
 
-### example policy
+### example IAM policy
 
 ```json
 {
@@ -92,6 +92,49 @@ jobs:
   DockerBuildPush:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
-      image: ${{ github.event.repository.name }}  # Name of the Docker Image (without tags and registery name)
       trivy_exit_code : 0
+```
+
+### Custom Name for App & Image Repository
+
+By default, your github repo name is used everywhere for naming resources.  
+
+However, if you wish to have a custom name for your project then you can override this by using `name` parameter.
+
+Example usage:  
+
+```yaml
+jobs:
+  DockerBuildPush:
+    uses: mimiro-io/.github/.github/workflows/docker.yaml@main
+    with:
+      name : "my-app"
+```
+
+### Skip IRSA or Docker (ECR) Jobs
+
+By default all the jobs in this workflow are executed. In case you wish to skip any or all of the jobs, it can be done by providing `true` to `skip_irsa` and/or `skip_docker` when calling to this common workflow.
+
+Example usage:  
+
+```yaml
+jobs:
+  DockerBuildPush:
+    uses: mimiro-io/.github/.github/workflows/docker.yaml@main
+    with:
+      skip_docker : true
+```
+
+### Custom Path/File name for IRSA's IAM Policy Json
+
+By default,IAM Policy Json file is referred from ci/policies.json. It possible to provide custom path/file name by using the `iam_policies_json_file`. Pls provide the absoulte path of this file from the root of your git repository.
+
+Example usage:  
+
+```yaml
+jobs:
+  DockerBuildPush:
+    uses: mimiro-io/.github/.github/workflows/docker.yaml@main
+    with:
+      iam_policies_json_file : iam/json/my-iam.json
 ```
