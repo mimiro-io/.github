@@ -7,7 +7,7 @@ on:
         description: "Application Name overwrite (Default is the github repo name)"
         required: false
         type: string
-        default: ${{ github.event.repository.name  }}
+        default: ${{ github.event.repository.name }}
       trivy_exit_code:
         description: "if set to 0, workflow will ignore trivy scan errors.(not recommended)"
         required: false
@@ -49,17 +49,17 @@ jobs:
         id: create-ecr-repo
         uses: int128/create-ecr-repository-action@v1
         with:
-          repository: ${{ inputs.name  }}  
+          repository: ${{ inputs.name }}  
 
       - name: Update ECR Repo Policy
         id: update-ecr-repo-policy
         run: |
-          aws ecr set-repository-policy --policy-text ${{ secrets.ECR_REPO_POLICY }}  --repository-name ${{ inputs.name  }}
+          aws ecr set-repository-policy --policy-text ${{ secrets.ECR_REPO_POLICY }}  --repository-name ${{ inputs.name }}
       
       - name: Update ECR Lifecycle Policy
         id: update-ecr-lifecycle-policy
         run: |
-          aws ecr put-lifecycle-policy --repository-name ${{ inputs.name  }} --lifecycle-policy-text \
+          aws ecr put-lifecycle-policy --repository-name ${{ inputs.name }} --lifecycle-policy-text \
             "{\"rules\":[{\"rulePriority\":1,\"description\":\"Expire untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countUnit\":\"days\",\"countNumber\":1},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Expire old images with default tag\",\"selection\":{\"tagStatus\":\"tagged\",\"tagPrefixList\":[\"master-\"],\"countType\":\"imageCountMoreThan\",\"countNumber\":50},\"action\":{\"type\":\"expire\"}}]}",
 
 
@@ -72,7 +72,7 @@ jobs:
         run: |
           export GIT_BRANCH=$(echo ${{ github.ref }} | cut -d / -f 3)
           export GIT_SHORT_SHA=$(git rev-parse --short HEAD)
-          echo ::set-output name=default_tag::${{ steps.login-ecr.outputs.registry }}/${{ inputs.name  }}:$GIT_BRANCH-$GIT_SHORT_SHA-$(date +%s)
+          echo ::set-output name=default_tag::${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:$GIT_BRANCH-$GIT_SHORT_SHA-$(date +%s)
         
       - name: Show Default Tag
         run: echo "${{ steps.set_default_tag.outputs.default_tag }}"
@@ -105,7 +105,7 @@ jobs:
         uses: docker/build-push-action@v2
         env:
           IMAGE_TAG_1: ${{ steps.set_default_tag.outputs.default_tag }}
-          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.name  }}:latest
+          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:latest
         with:
           push: true
           tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}}
@@ -121,8 +121,8 @@ jobs:
         uses: docker/build-push-action@v2
         env:
           IMAGE_TAG_1: ${{ steps.set_default_tag.outputs.default_tag }}
-          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.name  }}:latest
-          IMAGE_TAG_3: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.name  }}:${{ steps.get_tag.outputs.tag }}
+          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:latest
+          IMAGE_TAG_3: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:${{ steps.get_tag.outputs.tag }}
         with:
           push: true
           tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}},${{env.IMAGE_TAG_3}}
@@ -156,11 +156,11 @@ jobs:
               echo "${{ inputs.iam_policies_json_file }} exists. will be attached as inline policy to Role"
               python3 ./reusable-flow/script/setup-iam.py \
               --iam-policy-file="${{ inputs.iam_policies_json_file }}" \
-              --app-name=${{ inputs.name  }}          
+              --app-name=${{ inputs.name }}          
           else 
               echo "${{ inputs.iam_policies_json_file }} does not exist. No policy will be attached to the role "
               python3 ./reusable-flow/script/setup-iam.py \
-              --app-name=${{ inputs.name  }}  
+              --app-name=${{ inputs.name }}  
           fi
           
 
@@ -194,11 +194,11 @@ jobs:
               echo "IAM policy exists. will be attached as inline policy to Role"
               python3 ./reusable-flow/script/setup-iam.py \
               --iam-policy-file="${{ inputs.iam_policies_json_file }}" \
-              --app-name=${{ inputs.name  }}          
+              --app-name=${{ inputs.name }}          
           else 
               echo "${{ inputs.iam_policies_json_file }} does not exist. No policy will be attached to the role "
               python3 ./reusable-flow/script/setup-iam.py \
-              --app-name=${{ inputs.name  }}  
+              --app-name=${{ inputs.name }}  
           fi
         
 
