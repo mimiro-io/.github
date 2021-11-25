@@ -9,7 +9,7 @@ on:
         type: string
         default: ${{ github.event.repository.name }}
       trivy_exit_code:
-        description: "if set to 0, workflow will ignore trivy scan errors.(not recommended)"
+        description: "if set to 0, workflow will ignore trivy scan errors (not recommended)"
         required: false
         type: number
         default : 1
@@ -19,7 +19,7 @@ on:
         type: boolean
         default : false
       skip_irsa:
-        description: "if set to true, workflow will skip IRSA"
+        description: "if set to true, workflow will skip IRSA creation"
         required: false
         type: boolean
         default : false
