@@ -1,0 +1,68 @@
+name: Reusable Flyway workflow
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: false
+        type: string
+        default: dev
+      ssm_db_host:
+        required: true
+        type: string
+      ssm_db_user:
+        required: true
+        type: string
+      ssm_db_pass:
+        required: true
+        type: string
+      dir:
+        required: false
+        type: string
+        default: migration
+      image:
+        required: false
+        type: string
+        default: boxfuse/flyway
+      version:
+        required: false
+        type: string
+        default: 5.1.0
+      command:
+        required: false
+        type: string
+        default: validate
+
+jobs:
+  Flyway:
+    name: Flyway ${{ inputs.command }} - ${{ inputs.environment }}
+    runs-on: ${{ inputs.environment }}
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-region: eu-west-1
+
+    - name: Flyway ${{ inputs.command }}
+      run: |
+        FLYWAY_DIR=${{ inputs.dir }}
+        FLYWAY_IMAGE=${{ inputs.image }}:${{ inputs.version }}
+        FLYWAY_COMMAND=${{ inputs.command }}
+
+        DB_HOST=$(aws ssm get-parameter --name ${{ inputs.ssm_db_host }} --with-decryption | jq -r .Parameter.Value)
+        DB_USER=$(aws ssm get-parameter --name ${{ inputs.ssm_db_user }} --with-decryption | jq -r .Parameter.Value)
+        DB_PASS=$(aws ssm get-parameter --name ${{ inputs.ssm_db_pass }} --with-decryption | jq -r .Parameter.Value)
+        DB_URL=$(cat ${FLYWAY_DIR}/conf/flyway.conf | grep '^flyway.url' | sed "s!^flyway.url=\([^/]*//\)[^:]*!\1${DB_HOST}!")
+
+        docker run \
+          --volume $(pwd)/${FLYWAY_DIR}/sql:/flyway/sql \
+          ${FLYWAY_IMAGE} \
+          -validateOnMigrate="true" \
+          -url="${DB_URL}" \
+          -user="${DB_USER}" \
+          -password="${DB_PASS}" \
+          ${FLYWAY_COMMAND}
