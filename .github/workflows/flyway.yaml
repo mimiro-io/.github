@@ -35,7 +35,7 @@ on:
 
 jobs:
   Flyway:
-    name: Flyway ${{ inputs.command }} - ${{ inputs.environment }}
+    name: ${{ inputs.command }} - ${{ inputs.environment }}
     runs-on: ${{ inputs.environment }}
 
     steps:
