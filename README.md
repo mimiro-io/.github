@@ -84,7 +84,7 @@ Example usage:
 
 ```yaml
 jobs:
-  DockerBuildPush:
+  AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
       trivy_exit_code : 0
@@ -100,7 +100,7 @@ Example usage:
 
 ```yaml
 jobs:
-  DockerBuildPush:
+  AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
       name : "my-app"
@@ -114,7 +114,7 @@ Example usage:
 
 ```yaml
 jobs:
-  DockerBuildPush:
+  AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
       skip_docker : true
@@ -128,7 +128,7 @@ Example usage:
 
 ```yaml
 jobs:
-  DockerBuildPush:
+  AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
       iam_policies_json_file : iam/json/my-iam.json
