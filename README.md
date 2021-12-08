@@ -1,16 +1,28 @@
+# Reusable GitHub Actions Workflows
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
 
-# Common & Reusable GitHub Actions Workflows
+- [Docker CI + IRSA](#docker-ci--irsa)
+  - [Add a workflow status badge to you repo](#add-a-workflow-status-badge-to-you-repo)
+  - [Add a custom IAM policy for your application](#add-a-custom-iam-policy-for-your-application)
+    - [Example IAM policy JSON](#example-iam-policy-json)
+  - [Ignore Trivy Scan errors](#ignore-trivy-scan-errors)
+  - [Custom name for app and image repository](#custom-name-for-app-and-image-repository)
+  - [Skip IRSA creation or Docker (ECR) jobs](#skip-irsa-creation-or-docker-ecr-jobs)
+  - [Custom path/file name for IRSA's IAM policy JSON](#custom-pathfile-name-for-irsas-iam-policy-json)
+- [Flyway](#flyway)
+  - [Add a workflow to run Flyway manually](#add-a-workflow-to-run-flyway-manually)
+  - [Add a workflow to run Flyway automatically](#add-a-workflow-to-run-flyway-automatically)
 
-![Github Actions](https://avatars.githubusercontent.com/u/44036562?s=200&v=4)
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Reusable WorkFlows
+## Docker CI + IRSA
 
-## 1. Docker CI
+This workflow uses your Dockerfile to build a Docker image and push it to AWS ECR.
+It also configures [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html)
 
-This workflow uses your Dockerfile and build the image and pushes it to AWS ECR.
-Also configures ![IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html)
-
-If you wish to use this workflow, just create a tiny yaml file in your repo (i.e. `.github/workflows/ci.yaml`)and paste below content.
+If you wish to use this workflow, just create a tiny yaml file in your repo named `.github/workflows/ci.yaml` and paste below content.
 
 ```yaml
 name: CI
@@ -37,15 +49,15 @@ Add the following to your repo's README.md (replace `repo-name` with the actual 
 [![CI](https://github.com/mimiro-io/repo-name/actions/workflows/ci.yaml/badge.svg)](https://github.com/mimiro-io/repo-name/actions/workflows/ci.yaml)
 ```
 
-### Add a custom IAM policy to your application
+### Add a custom IAM policy for your application
 
-If your app/service needs access to any AWS Service, for example S3, SSM Parameter store, just have all your permissions in `./ci/policies.json` file.
+If your app/service needs access to any AWS Service, for example S3, SSM Parameter store, create a `./ci/policies.json` file with the neccessary permissions.
 
 https://awspolicygen.s3.amazonaws.com/policygen.html can be used to create IAM polices.
 
-> Make sure, never mention account number in policies stored in GitHub. Just use `${AWS_ACCOUNT_ID}` variable. This CI workflow will populate it for you while deploying. 
+> Make sure to never mention account number in policies stored in GitHub. Just use a `${AWS_ACCOUNT_ID}` variable instead. This CI workflow will populate it for you while deploying.
 
-### example IAM policy
+#### Example IAM policy JSON
 
 ```json
 {
@@ -82,59 +94,153 @@ https://awspolicygen.s3.amazonaws.com/policygen.html can be used to create IAM p
 ### Ignore Trivy Scan errors
 
 Its not recommended to ignore trive vulnerability scan, but if its not possible to fix
-certain vulnerabilities, then you can skip this check by supplying `trivy_exit_code : 0`. 
-This is an optional attribute. By default its always set to `1`. 
+certain vulnerabilities, then you can skip this check by supplying `trivy_exit_code : 0`.
+This is an optional attribute. By default its always set to `1`.
 
-Example usage:  
+Example usage:
 
 ```yaml
 jobs:
-  DockerBuildPush:
+  AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
       trivy_exit_code : 0
 ```
 
-### Custom Name for App & Image Repository
+### Custom name for app and image repository
 
-By default, your github repo name is used everywhere for naming resources.  
+By default, your github repo name is used everywhere for naming resources.
 
 However, if you wish to have a custom name for your project then you can override this by using `name` parameter.
 
-Example usage:  
+Example usage:
 
 ```yaml
 jobs:
-  DockerBuildPush:
+  AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
       name : "my-app"
 ```
 
-### Skip IRSA or Docker (ECR) Jobs
+### Skip IRSA creation or Docker (ECR) jobs
 
 By default all the jobs in this workflow are executed. In case you wish to skip any or all of the jobs, it can be done by providing `true` to `skip_irsa` and/or `skip_docker` when calling to this common workflow.
 
-Example usage:  
+Example usage:
 
 ```yaml
 jobs:
-  DockerBuildPush:
+  AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
       skip_docker : true
 ```
 
-### Custom Path/File name for IRSA's IAM Policy Json
+### Custom path/file name for IRSA's IAM policy JSON
 
 By default,IAM Policy Json file is referred from ci/policies.json. It possible to provide custom path/file name by using the `iam_policies_json_file`. Pls provide the absoulte path of this file from the root of your git repository.
 
-Example usage:  
+Example usage:
 
 ```yaml
 jobs:
-  DockerBuildPush:
+  AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
       iam_policies_json_file : iam/json/my-iam.json
+```
+
+## Flyway
+
+This workflow runs Flyway migrations if your app/service is configured with that.
+
+For this to work, your repository needs the following Flyway directory structure and configuration file:
+
+```sh
+.
+├── migration
+│   ├── conf
+│   │   └── flyway.conf
+│   └── sql
+│       ├──V1_001__create_tables_and_indexes.sql
+|       └──...
+```
+
+The database proctocol and name is taken automatically from the `flyway.conf` file, so make sure to use the same name both locally and in the different environments.
+
+### Add a workflow to run Flyway manually
+
+This workflow lets you manually choose environment and if Flyway should `validate` or `migrate`.
+
+Create a `.github/workflows/flyway.yaml` file and paste the below content.
+Make sure that the branch name is correct and update the values of `ssm_db_host`, `ssm_db_user`, `ssm_db_pass` to match the actual paths used in AWS SSM Parameter Store.
+
+```yaml
+name: Flyway
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        description: Environment
+        options:
+        - dev
+        - prod
+      command:
+        type: choice
+        description: Flyway command
+        options:
+        - validate
+        - migrate
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  Flyway:
+    uses: mimiro-io/.github/.github/workflows/flyway.yaml@main
+    with:
+      environment: ${{ github.event.inputs.environment }}
+      command: ${{ github.event.inputs.command }}
+      ssm_db_host: /ssm/parameter/path/host
+      ssm_db_user: /ssm/parameter/path/user
+      ssm_db_pass: /ssm/parameter/path/pass
+```
+
+### Add a workflow to run Flyway automatically
+
+This workflow runs automatically, and in the example below *before* the [Docker CI + IRSA](#docker-ci--irsa) workflow.
+
+- Creating a Pull Request against master runs `flyway validate` in the dev environment
+- Pushing to master runs `flyway migrate` in the dev environment
+- Creating a GitHub release runs `flyway migrate` in the prod environment
+
+Create a `.github/workflows/ci.yaml` file and paste the below content.
+Make sure that the branch name is correct and update the values of `ssm_db_host`, `ssm_db_user`, `ssm_db_pass` to match the actual paths used in AWS SSM Parameter Store.
+
+```yaml
+name: CI
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  release:
+    types:
+      - published
+
+jobs:
+  Flyway:
+    uses: mimiro-io/.github/.github/workflows/flyway.yaml@main
+    with:
+      environment: ${{ github.event_name == 'release' && 'prod' || 'dev' }}
+      command: ${{ github.event_name == 'pull_request' && 'validate' || 'migrate' }}
+      ssm_db_host: /ssm/parameter/path/host
+      ssm_db_user: /ssm/parameter/path/user
+      ssm_db_pass: /ssm/parameter/path/pass
+  AWS:
+    needs: Flyway
+    uses: mimiro-io/.github/.github/workflows/docker.yaml@main
+    secrets:
+      ECR_REPO_POLICY: ${{ secrets.ECR_REPO_POLICY }}
 ```
