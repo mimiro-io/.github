@@ -1,4 +1,21 @@
 # Reusable GitHub Actions Workflows
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Docker CI + IRSA](#docker-ci--irsa)
+  - [Add a workflow status badge to you repo](#add-a-workflow-status-badge-to-you-repo)
+  - [Add a custom IAM policy for your application](#add-a-custom-iam-policy-for-your-application)
+    - [Example IAM policy JSON](#example-iam-policy-json)
+  - [Ignore Trivy Scan errors](#ignore-trivy-scan-errors)
+  - [Custom name for app and image repository](#custom-name-for-app-and-image-repository)
+  - [Skip IRSA creation or Docker (ECR) jobs](#skip-irsa-creation-or-docker-ecr-jobs)
+  - [Custom path/file name for IRSA's IAM policy JSON](#custom-pathfile-name-for-irsas-iam-policy-json)
+- [Flyway](#flyway)
+  - [Add a workflow to run Flyway manually](#add-a-workflow-to-run-flyway-manually)
+  - [Add a workflow to run Flyway automatically](#add-a-workflow-to-run-flyway-automatically)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Docker CI + IRSA
 
@@ -40,7 +57,7 @@ https://awspolicygen.s3.amazonaws.com/policygen.html can be used to create IAM p
 
 > Make sure to never mention account number in policies stored in GitHub. Just use a `${AWS_ACCOUNT_ID}` variable instead. This CI workflow will populate it for you while deploying.
 
-#### Example IAM policy
+#### Example IAM policy JSON
 
 ```json
 {
@@ -77,10 +94,10 @@ https://awspolicygen.s3.amazonaws.com/policygen.html can be used to create IAM p
 ### Ignore Trivy Scan errors
 
 Its not recommended to ignore trive vulnerability scan, but if its not possible to fix
-certain vulnerabilities, then you can skip this check by supplying `trivy_exit_code : 0`. 
-This is an optional attribute. By default its always set to `1`. 
+certain vulnerabilities, then you can skip this check by supplying `trivy_exit_code : 0`.
+This is an optional attribute. By default its always set to `1`.
 
-Example usage:  
+Example usage:
 
 ```yaml
 jobs:
@@ -92,11 +109,11 @@ jobs:
 
 ### Custom name for app and image repository
 
-By default, your github repo name is used everywhere for naming resources.  
+By default, your github repo name is used everywhere for naming resources.
 
 However, if you wish to have a custom name for your project then you can override this by using `name` parameter.
 
-Example usage:  
+Example usage:
 
 ```yaml
 jobs:
@@ -110,7 +127,7 @@ jobs:
 
 By default all the jobs in this workflow are executed. In case you wish to skip any or all of the jobs, it can be done by providing `true` to `skip_irsa` and/or `skip_docker` when calling to this common workflow.
 
-Example usage:  
+Example usage:
 
 ```yaml
 jobs:
@@ -120,11 +137,11 @@ jobs:
       skip_docker : true
 ```
 
-### Custom path/file name for IRSA's IAM JSON policy
+### Custom path/file name for IRSA's IAM policy JSON
 
 By default,IAM Policy Json file is referred from ci/policies.json. It possible to provide custom path/file name by using the `iam_policies_json_file`. Pls provide the absoulte path of this file from the root of your git repository.
 
-Example usage:  
+Example usage:
 
 ```yaml
 jobs:
@@ -147,7 +164,7 @@ For this to work, your repository needs the following Flyway directory structure
 │   │   └── flyway.conf
 │   └── sql
 │       ├──V1_001__create_tables_and_indexes.sql
-|       └──... 
+|       └──...
 ```
 
 The database proctocol and name is taken automatically from the `flyway.conf` file, so make sure to use the same name both locally and in the different environments.
@@ -227,4 +244,3 @@ jobs:
     secrets:
       ECR_REPO_POLICY: ${{ secrets.ECR_REPO_POLICY }}
 ```
-
