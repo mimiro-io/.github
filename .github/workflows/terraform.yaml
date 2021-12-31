@@ -40,7 +40,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: ${{ input.terraform_working_dir }}
+        working-directory: ${{ inputs.terraform_working_dir }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -54,7 +54,7 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v1
       with:
-        terraform_version: ${{ input.terraform_version }}
+        terraform_version: ${{ inputs.terraform_version }}
 
     - name: Terraform fmt
       id: fmt
@@ -63,10 +63,10 @@ jobs:
     - name: Terraform Init
       id: init
       run: terraform init
-            -backend-config=bucket=${{ input.terraform_backend_bucket }}
-            -backend-config=dynamodb_table=${{ input.terraform_backend_dynamoDB }}
-            -backend-config=key=infrastructure/${{ input.name }}
-            -backend-config=region=${{ input.aws_region }}
+            -backend-config=bucket=${{ inputs.terraform_backend_bucket }}
+            -backend-config=dynamodb_table=${{ inputs.terraform_backend_dynamoDB }}
+            -backend-config=key=infrastructure/${{ inputs.name }}
+            -backend-config=region=${{ inputs.aws_region }}
             -input=false
 
     - name: Terraform Validate
@@ -77,7 +77,7 @@ jobs:
       id: plan
       run: terraform plan
             -var env=dev
-            -var region=${{ input.aws_region }}
+            -var region=${{ inputs.aws_region }}
             -out tfplan
       continue-on-error: false
 
@@ -114,4 +114,4 @@ jobs:
       # On push to master, build or change infrastructure according to Terraform configuration files
     - name: Terraform Apply
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-      run: terraform apply  -auto-approve tfplan
+      run: echo terraform apply  -auto-approve tfplan
