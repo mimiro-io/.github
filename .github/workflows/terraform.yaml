@@ -1,0 +1,108 @@
+name: Reusable CI workflow for Terraform
+
+on:
+  workflow_call:
+    inputs:
+      name: 
+        description: "Infra Name (Default is the github repo name)"
+        required: false
+        type: string
+        default: ${{ github.event.repository.name }}
+      aws_region: 
+        description: "AWS Region Name overwrite (Default is eu-west-1)"
+        required: false
+        type: string
+        default: 'eu-west-1'
+      terraform_version: 
+        description: "Terraform version overwrite (Default is the github repo name)"
+        required: false
+        type: string
+        default: '1.1.1'
+      terraform_backend_bucket: 
+        description: "Terraform backend bucket name"
+        required: true
+        type: string
+      terraform_backend_dynamoDB: 
+        description: "Terraform backend bucket name"
+        required: true
+        type: string    
+
+        
+jobs:
+  dev:
+    name: dev
+    runs-on: dev
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-region:  ${{ inputs.aws_region }}  
+        # We dont need AWS Keys here. This workflow will use the EC2 Instance profile of actions runner
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: ${{ input.terraform_version }}
+
+    - name: Terraform fmt
+      id: fmt
+      run: terraform fmt -check
+
+    - name: Terraform Init
+      id: init
+      run: terraform init
+            -backend-config=bucket=${{ input.terraform_backend_bucket }}
+            -backend-config=dynamodb_table=${{ input.terraform_backend_dynamoDB }}
+            -backend-config=key=infrastructure/${{ input.name }}
+            -backend-config=region=${{ input.aws_region }}
+            -input=false
+
+    - name: Terraform Validate
+      id: validate
+      run: terraform validate
+
+    - name: Terraform Plan
+      id: plan
+      run: terraform plan
+            -var env=dev
+            -var region=${{ input.aws_region }}
+            -out tfplan
+      continue-on-error: false
+
+    - uses: actions/github-script@0.9.0
+      if: github.event_name == 'pull_request'
+      env:
+        PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const validateOutcome = "${{ steps.validate.outcome }}".replace(/\u001b\[.*?m/g, '');
+          const planOutcome =  "${{ steps.plan.outcome }}".replace(/\u001b\[.*?m/g, '');
+          const planOutput =  process.env.PLAN.replace(/\u001b\[.*?m/g, '');
+          const output = `||||
+          |-|-|-|
+          | Terraform Format and Style 🖌  | \`${{ steps.fmt.outcome }}\`  | ${ "${{ steps.fmt.outcome }}" === "success" ? "✅" : "❌" } |
+          | Terraform Initialization ⚙️     | \`${{ steps.init.outcome }}\` | ${ "${{ steps.init.outcome }}" === "success" ? "✅" : "❌" } |
+          | Terraform Validation 🤖        | \`${validateOutcome}\`        | ${ validateOutcome === "success" ? "✅" : "❌" } |
+          | Terraform Plan 📖              | \`${planOutcome}\`            | ${ planOutcome === "success" ? "✅" : "❌" } |
+          
+          <details><summary>Show Plan</summary>
+          \`\`\`terraform\n
+          ${planOutput}
+          \`\`\`
+          </details>
+          
+          *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
+          github.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: output
+          })
+      # On push to master, build or change infrastructure according to Terraform configuration files
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+      run: terraform apply  -auto-approve tfplan
