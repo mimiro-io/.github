@@ -18,6 +18,11 @@ on:
         required: false
         type: string
         default: '1.1.1'
+      terraform_working_dir: 
+        description: "Relative path to root of terraform dir in the repo. default is ./terraform"
+        required: false
+        type: string
+        default: './terraform'
       terraform_backend_bucket: 
         description: "Terraform backend bucket name"
         required: true
@@ -32,6 +37,10 @@ jobs:
   dev:
     name: dev
     runs-on: dev
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ input.terraform_working_dir }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
