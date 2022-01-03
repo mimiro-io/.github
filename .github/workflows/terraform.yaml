@@ -3,6 +3,16 @@ name: Reusable CI workflow for Terraform
 on:
   workflow_call:
     inputs:
+      action: 
+        description: "terraform action (Default is the plan)"
+        required: false
+        type: string
+        default: 'plan'
+      environment: 
+        description: "environment (Default is dev)"
+        required: false
+        type: string
+        default: 'dev'
       name: 
         description: "Infra Name (Default is the github repo name)"
         required: false
@@ -34,9 +44,9 @@ on:
 
         
 jobs:
-  dev:
-    name: dev
-    runs-on: dev
+  ${{ inputs.environment }}  :
+    name: ${{ inputs.environment }}
+    runs-on: ${{ inputs.environment }}
     defaults:
       run:
         shell: bash
@@ -81,37 +91,10 @@ jobs:
             -out tfplan
       continue-on-error: false
 
-    - uses: actions/github-script@0.9.0
-      if: github.event_name == 'pull_request'
-      env:
-        PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          const validateOutcome = "${{ steps.validate.outcome }}".replace(/\u001b\[.*?m/g, '');
-          const planOutcome =  "${{ steps.plan.outcome }}".replace(/\u001b\[.*?m/g, '');
-          const planOutput =  process.env.PLAN.replace(/\u001b\[.*?m/g, '');
-          const output = `||||
-          |-|-|-|
-          | Terraform Format and Style 🖌  | \`${{ steps.fmt.outcome }}\`  | ${ "${{ steps.fmt.outcome }}" === "success" ? "✅" : "❌" } |
-          | Terraform Initialization ⚙️     | \`${{ steps.init.outcome }}\` | ${ "${{ steps.init.outcome }}" === "success" ? "✅" : "❌" } |
-          | Terraform Validation 🤖        | \`${validateOutcome}\`        | ${ validateOutcome === "success" ? "✅" : "❌" } |
-          | Terraform Plan 📖              | \`${planOutcome}\`            | ${ planOutcome === "success" ? "✅" : "❌" } |
-          
-          <details><summary>Show Plan</summary>
-          \`\`\`terraform\n
-          ${planOutput}
-          \`\`\`
-          </details>
-          
-          *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
-          github.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: output
-          })
-      # On push to master, build or change infrastructure according to Terraform configuration files
     - name: Terraform Apply
-      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+      if: github.ref == 'refs/heads/master' && ${{ inputs.action }} == 'apply' 
       run: terraform apply  -auto-approve tfplan
+
+        - name: Terraform Destroy
+      if: ${{ inputs.action }} == 'apply' 
+      run: terraform destroy  -auto-approve tfplan
