@@ -45,7 +45,7 @@ on:
 
 jobs:
   terraform:
-    name: ${{ inputs.environment }}-${{ inputs.command }}
+    name: ${{ inputs.environment }}/${{ inputs.command }}
 
     runs-on: ${{ inputs.environment }}
 
