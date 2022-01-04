@@ -3,8 +3,8 @@ name: Reusable CI workflow for Terraform
 on:
   workflow_call:
     inputs:
-      action: 
-        description: "terraform action (Default is the plan)"
+      command: 
+        description: "terraform command (Default is the plan)"
         required: false
         type: string
         default: 'plan'
@@ -92,9 +92,9 @@ jobs:
       continue-on-error: false
 
     - name: Terraform Apply
-      if: github.ref == 'refs/heads/master' && ${{ inputs.action }} == 'apply' 
+      if: github.ref == 'refs/heads/master' && ${{ inputs.command }} == 'apply' 
       run: terraform apply  -auto-approve tfplan
 
     - name: Terraform Destroy
-      if: ${{ inputs.action }} == 'apply' 
+      if: ${{ inputs.command }} == 'apply' 
       run: terraform destroy  -auto-approve tfplan
