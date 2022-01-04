@@ -24,7 +24,7 @@ on:
         type: string
         default: 'eu-west-1'
       terraform_version: 
-        description: "Terraform version overwrite (Default is the github repo name)"
+        description: "Terraform version overwrite (Default 1.1.1)"
         required: false
         type: string
         default: '1.1.1'
@@ -38,7 +38,7 @@ on:
         required: true
         type: string
       terraform_backend_dynamoDB: 
-        description: "Terraform backend bucket name"
+        description: "Terraform backend dynamodbTable name"
         required: true
         type: string    
 
@@ -95,6 +95,6 @@ jobs:
       if: github.ref == 'refs/heads/master' && ${{ inputs.action }} == 'apply' 
       run: terraform apply  -auto-approve tfplan
 
-        - name: Terraform Destroy
+    - name: Terraform Destroy
       if: ${{ inputs.action }} == 'apply' 
       run: terraform destroy  -auto-approve tfplan
