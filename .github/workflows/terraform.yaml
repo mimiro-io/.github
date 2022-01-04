@@ -44,7 +44,7 @@ on:
 
         
 jobs:
-  ${{ inputs.environment }}  :
+  terraform  :
     name: ${{ inputs.environment }}
     runs-on: ${{ inputs.environment }}
     defaults:
