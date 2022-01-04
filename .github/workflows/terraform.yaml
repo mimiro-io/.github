@@ -86,7 +86,7 @@ jobs:
     - name: Terraform Plan
       id: plan
       run: terraform plan
-            -var env=dev
+            -var env=${{ inputs.environment }}
             -var region=${{ inputs.aws_region }}
             -out tfplan
       continue-on-error: false
@@ -95,6 +95,14 @@ jobs:
       if: github.ref == 'refs/heads/master' && ${{ inputs.command }} == 'apply' 
       run: terraform apply  -auto-approve tfplan
 
+    - name: Terraform Destroy Plan
+      if: ${{ inputs.command }} == 'destroy-plan' 
+      run: terraform plan -destroy  
+            -var env=${{ inputs.environment }}
+            -var region=${{ inputs.aws_region }}
+    
     - name: Terraform Destroy
-      if: ${{ inputs.command }} == 'apply' 
-      run: terraform destroy  -auto-approve tfplan
+      if: ${{ inputs.command }} == 'destroy' 
+      run: terraform apply -destroy  -auto-approve
+            -var env=${{ inputs.environment }}
+            -var region=${{ inputs.aws_region }}
