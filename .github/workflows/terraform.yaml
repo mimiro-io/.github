@@ -96,7 +96,10 @@ jobs:
 
       - name: Terraform Apply
         if: inputs.command == 'apply'
-        run: terraform apply  -auto-approve tfplan
+        run: terraform apply  -auto-approve
+              -var env=${{ inputs.environment }}
+              -var region=${{ inputs.aws_region }}
+
 
       - name: Terraform Destroy Plan
         if: inputs.command  == 'destroy-plan'
