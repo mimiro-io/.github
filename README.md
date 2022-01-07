@@ -244,3 +244,34 @@ jobs:
     secrets:
       ECR_REPO_POLICY: ${{ secrets.ECR_REPO_POLICY }}
 ```
+
+## Terraform
+
+Reusable workflow for your terraform configuration. Can be used to perform common terraform operations.
+
+### Use in regular terraform CI. (Automatic apply to dev when there is a commit to master)
+
+Create a `.github/workflows/ci.yaml` file and paste the below content.
+Make sure that the branch name is correct and update the values of `ssm_db_host`, `ssm_db_user`, `ssm_db_pass` to match the actual paths used in AWS SSM Parameter Store.
+TODO
+TOD
+
+### Use in PR. (Automatic apply to dev when there is a commit to master)
+
+Create a `.github/workflows/ci.yaml` file and paste the below content.
+Make sure that the branch name is correct and update the values of `ssm_db_host`, `ssm_db_user`, `ssm_db_pass` to match the actual paths used in AWS SSM Parameter Store.
+TODO
+TOD
+TODO
+TOD
+
+### Use in WD. (Automatic apply to dev when there is a commit to master)
+
+Create a `.github/workflows/ci.yaml` file and paste the below content.
+Make sure that the branch name is correct and update the values of `ssm_db_host`, `ssm_db_user`, `ssm_db_pass` to match the actual paths used in AWS SSM Parameter Store.
+TODO
+TOD
+
+TODO
+TOD
+
