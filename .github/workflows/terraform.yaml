@@ -20,26 +20,26 @@ on:
         type: string
         default: ${{ github.event.repository.name }}
       aws_region:
-        description: "AWS Region Name overwrite (Default is eu-west-1)"
+        description: "AWS Region Name (Default is eu-west-1)"
         required: false
         type: string
         default: 'eu-west-1'
       terraform_version:
-        description: "Terraform version overwrite (Default 1.1.1)"
+        description: "Terraform version (Default 1.1.3)"
         required: false
         type: string
-        default: '1.1.1'
+        default: '1.1.3'
       terraform_working_dir:
         description: "terraform dir path in repo.Default is ./terraform"
         required: false
         type: string
         default: './terraform'
       terraform_backend_bucket:
-        description: "Terraform backend bucket name"
+        description: "Terraform remote backend bucket name"
         required: true
         type: string
       terraform_backend_dynamoDB:
-        description: "Terraform backend dynamodbTable name"
+        description: "Terraform remote backend dynamodbTable name"
         required: true
         type: string
 
