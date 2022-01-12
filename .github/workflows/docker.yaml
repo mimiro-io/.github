@@ -98,9 +98,8 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
     
-
       - name: Push Latest Docker Image to ECR
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
         id: docker_push
         uses: docker/build-push-action@v2
         env:
@@ -148,7 +147,7 @@ jobs:
           aws-region: eu-west-1
      
       - name: IAM Role for Service Account
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
         run: |
           python3 -m pip install boto3
           python3 --version          
@@ -186,7 +185,7 @@ jobs:
           aws-region: eu-west-1
 
       - name: IAM Role for Service Account
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
         run: |
           python3 -m pip install boto3
           python3 --version 
