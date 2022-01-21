@@ -52,6 +52,7 @@ jobs:
         FLYWAY_DIR=${{ inputs.dir }}
         FLYWAY_IMAGE=${{ inputs.image }}:${{ inputs.version }}
         FLYWAY_COMMAND=${{ inputs.command }}
+        FLYWAY_OPTIONS=${{ inputs.command == 'validate' && '-target=current' || '' }}
 
         DB_HOST=$(aws ssm get-parameter --name ${{ inputs.ssm_db_host }} --with-decryption | jq -r .Parameter.Value)
         DB_USER=$(aws ssm get-parameter --name ${{ inputs.ssm_db_user }} --with-decryption | jq -r .Parameter.Value)
@@ -65,4 +66,5 @@ jobs:
           -url="${DB_URL}" \
           -user="${DB_USER}" \
           -password="${DB_PASS}" \
+          ${FLYWAY_OPTIONS} \
           ${FLYWAY_COMMAND}
