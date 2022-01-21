@@ -15,9 +15,11 @@
   - [Add a workflow to run Flyway manually](#add-a-workflow-to-run-flyway-manually)
   - [Add a workflow to run Flyway automatically](#add-a-workflow-to-run-flyway-automatically)
 - [Terraform](#terraform)
-  - [Use in regular terraform CI. (Automatic apply to non-prod when there is a commit to master/main)](#use-in-regular-terraform-ci-automatic-apply-to-non-prod-when-there-is-a-commit-to-mastermain)
-  - [Use in PR. (Automatic apply to dev when there is a commit to master)](#use-in-pr-automatic-apply-to-dev-when-there-is-a-commit-to-master)
-  - [Use in WD. (Automatic apply to dev when there is a commit to master)](#use-in-wd-automatic-apply-to-dev-when-there-is-a-commit-to-master)
+  - [Input Parameters](#input-parameters)
+  - [Example Usage : This workflow can be used in three ways-](#example-usage--this-workflow-can-be-used-in-three-ways-)
+    - [1. Use in regular terraform CI. (Automatic apply to non-prod when there is a commit to master/main)](#1-use-in-regular-terraform-ci-automatic-apply-to-non-prod-when-there-is-a-commit-to-mastermain)
+    - [2. Use for PR Checks (run terraform `plan` in multiple environment when there is PR is raised to master/main)](#2-use-for-pr-checks-run-terraform-plan-in-multiple-environment-when-there-is-pr-is-raised-to-mastermain)
+    - [3. Use for Manual Terraform Operations. (e.g Apply in Prod, Destroy Dev etc.)](#3-use-for-manual-terraform-operations-eg-apply-in-prod-destroy-dev-etc)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -253,29 +255,143 @@ jobs:
 
 Reusable workflow for your terraform configuration. Can be used to perform common terraform operations.
 
-### Use in regular terraform CI. (Automatic apply to non-prod when there is a commit to master/main)
+### Input Parameters
 
-Create a `.github/workflows/ci.yaml` file and paste the below content.
-Make sure that the branch name is correct and update the values of `ssm_db_host`, `ssm_db_user`, `ssm_db_pass` to match the actual paths used in AWS SSM Parameter Store.
-TODO
-TOD
+```yaml
+inputs:
+  command:
+    description: "terraform command (Default is the plan)"
+    required: false
+    type: string
+    default: 'plan'
+  environment:
+    description: "environment (Default is dev)"
+    required: false
+    type: string
+    default: 'dev'
+  name:
+    description: "Infra Name (Default is the github repo name)"
+    required: false
+    type: string
+    default: ${{ github.event.repository.name }}
+  aws_region:
+    description: "AWS Region Name (Default is eu-west-1)"
+    required: false
+    type: string
+    default: 'eu-west-1'
+  terraform_version:
+    description: "Terraform version (Default 1.1.3)"
+    required: false
+    type: string
+    default: '1.1.3'
+  terraform_working_dir:
+    description: "terraform dir path in repo.Default is ./terraform"
+    required: false
+    type: string
+    default: './terraform'
+  terraform_backend_bucket:
+    description: "Terraform remote backend bucket name"
+    required: true
+    type: string
+  terraform_backend_dynamoDB:
+    description: "Terraform remote backend dynamodbTable name"
+    required: true
+    type: string
+```
 
-### Use in PR. (Automatic apply to dev when there is a commit to master)
+### Example Usage : This workflow can be used in three ways-
 
-Create a `.github/workflows/ci.yaml` file and paste the below content.
-Make sure that the branch name is correct and update the values of `ssm_db_host`, `ssm_db_user`, `ssm_db_pass` to match the actual paths used in AWS SSM Parameter Store.
-TODO
-TOD
-TODO
-TOD
+#### 1. Use in regular terraform CI. (Automatic apply to non-prod when there is a commit to master/main)
 
-### Use in WD. (Automatic apply to dev when there is a commit to master)
+Create a `.github/workflows/terraform-CI.yaml` file and paste the below content.
 
-Create a `.github/workflows/ci.yaml` file and paste the below content.
-Make sure that the branch name is correct and update the values of `ssm_db_host`, `ssm_db_user`, `ssm_db_pass` to match the actual paths used in AWS SSM Parameter Store.
-TODO
-TOD
+```yaml
+---
+# CI - Continous Integration
+# Terraform auto apply in dev when push to master
+name: terraform-CI
+on:
+ push:
+   branches: [ master ]
 
-TODO
-TOD
+jobs:
+  terraform:
+    uses: mimiro-io/.github/.github/workflows/terraform.yaml@main
+    with:
+      environment: dev
+      command: apply
+      terraform_backend_bucket: s3-bucket-name
+      terraform_backend_dynamoDB: dynamo-DB table name
+```
 
+#### 2. Use for PR Checks (run terraform `plan` in multiple environment when there is PR is raised to master/main)
+
+Create a `.github/workflows/terraform-PR.yaml` file and paste the below content.
+
+```yaml
+---
+# PR - Pull Request checks
+# Terraform plan for dev and prod, when PR is raised to master
+name: terraform-PR
+on:
+ pull_request:
+   branches: [ master ]
+
+jobs:
+
+  terraform-dev:
+    uses: mimiro-io/.github/.github/workflows/terraform.yaml@main
+    with:
+      environment: dev
+      command: plan
+      terraform_backend_bucket: s3-bucket-name
+      terraform_backend_dynamoDB:dynamo-DB table name
+  
+  terraform-prod:
+    uses: mimiro-io/.github/.github/workflows/terraform.yaml@main
+    with:
+      environment: prod
+      command: plan
+      terraform_backend_bucket: s3-bucket-name
+      terraform_backend_dynamoDB: dynamo-DB table name
+
+```
+
+#### 3. Use for Manual Terraform Operations. (e.g Apply in Prod, Destroy Dev etc.)
+
+Create a `.github/workflows/terraform-WD.yaml` file and paste the below content.
+
+```yaml
+---
+# WD - workflow_dispatch.  Manual trigger of terraform commands.
+# Run various terraform commands in any of the dev/prod environment. (eg. apply in prod)
+name: terraform-WD
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        description: Environment
+        options:
+          - dev
+          - prod
+      command:
+        type: choice
+        description: terraform command to be executed
+        options:
+          - plan
+          - apply
+          - destroy-plan
+          - destroy
+
+
+jobs:
+  terraform:
+    uses: mimiro-io/.github/.github/workflows/terraform.yaml@main
+    with:
+      environment: ${{ github.event.inputs.environment }}
+      command: ${{ github.event.inputs.command }}
+      terraform_backend_bucket: s3-bucket-name
+      terraform_backend_dynamoDB: dynamo-DB table name
+
+```
