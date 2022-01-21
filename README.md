@@ -14,6 +14,10 @@
 - [Flyway](#flyway)
   - [Add a workflow to run Flyway manually](#add-a-workflow-to-run-flyway-manually)
   - [Add a workflow to run Flyway automatically](#add-a-workflow-to-run-flyway-automatically)
+- [Terraform](#terraform)
+  - [Use in regular terraform CI. (Automatic apply to non-prod when there is a commit to master/main)](#use-in-regular-terraform-ci-automatic-apply-to-non-prod-when-there-is-a-commit-to-mastermain)
+  - [Use in PR. (Automatic apply to dev when there is a commit to master)](#use-in-pr-automatic-apply-to-dev-when-there-is-a-commit-to-master)
+  - [Use in WD. (Automatic apply to dev when there is a commit to master)](#use-in-wd-automatic-apply-to-dev-when-there-is-a-commit-to-master)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -249,7 +253,7 @@ jobs:
 
 Reusable workflow for your terraform configuration. Can be used to perform common terraform operations.
 
-### Use in regular terraform CI. (Automatic apply to dev when there is a commit to master)
+### Use in regular terraform CI. (Automatic apply to non-prod when there is a commit to master/main)
 
 Create a `.github/workflows/ci.yaml` file and paste the below content.
 Make sure that the branch name is correct and update the values of `ssm_db_host`, `ssm_db_user`, `ssm_db_pass` to match the actual paths used in AWS SSM Parameter Store.
