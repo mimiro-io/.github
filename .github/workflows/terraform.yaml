@@ -5,12 +5,12 @@ on:
   workflow_call:
     inputs:
       command:
-        description: "terraform command (Default is the plan)"
+        description: "Terraform command (Default is plan)"
         required: false
         type: string
         default: 'plan'
       environment:
-        description: "environment (Default is dev)"
+        description: "Environment name (Default is dev)"
         required: false
         type: string
         default: 'dev'
@@ -25,21 +25,21 @@ on:
         type: string
         default: 'eu-west-1'
       terraform_version:
-        description: "Terraform version (Default 1.1.3)"
+        description: "Terraform CLI Version (Default 1.1.3)"
         required: false
         type: string
         default: '1.1.3'
       terraform_working_dir:
-        description: "terraform dir path in repo.Default is ./terraform"
+        description: "Terraform dir path in repo. (Default is ./terraform)"
         required: false
         type: string
         default: './terraform'
       terraform_backend_bucket:
-        description: "Terraform remote backend bucket name"
+        description: "Terraform remote backend S3 bucket name to store the terraform state"
         required: true
         type: string
-      terraform_backend_dynamoDB:
-        description: "Terraform remote backend dynamodbTable name"
+      terraform_backend_dynamodb:
+        description: "Terraform remote backend dynamodbTable name to acquire state lock"
         required: true
         type: string
 
@@ -76,7 +76,7 @@ jobs:
         id: init
         run: terraform init
               -backend-config=bucket=${{ inputs.terraform_backend_bucket }}
-              -backend-config=dynamodb_table=${{ inputs.terraform_backend_dynamoDB }}
+              -backend-config=dynamodb_table=${{ inputs.terraform_backend_dynamodb }}
               -backend-config=key=infrastructure/${{ inputs.name }}
               -backend-config=region=${{ inputs.aws_region }}
               -input=false

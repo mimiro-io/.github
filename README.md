@@ -257,53 +257,58 @@ Reusable workflow for your terraform configuration. Can be used to perform commo
 
 ### Input Parameters
 
+Any or all of the below input parameters can be used by using `with:`.  
+
+[find example usages here](#example-usage--this-workflow-can-be-used-in-three-ways-)
+
 ```yaml
-inputs:
-  command:
-    description: "terraform command (Default is the plan)"
-    required: false
-    type: string
-    default: 'plan'
-  environment:
-    description: "environment (Default is dev)"
-    required: false
-    type: string
-    default: 'dev'
-  name:
-    description: "Infra Name (Default is the github repo name)"
-    required: false
-    type: string
-    default: ${{ github.event.repository.name }}
-  aws_region:
-    description: "AWS Region Name (Default is eu-west-1)"
-    required: false
-    type: string
-    default: 'eu-west-1'
-  terraform_version:
-    description: "Terraform version (Default 1.1.3)"
-    required: false
-    type: string
-    default: '1.1.3'
-  terraform_working_dir:
-    description: "terraform dir path in repo.Default is ./terraform"
-    required: false
-    type: string
-    default: './terraform'
-  terraform_backend_bucket:
-    description: "Terraform remote backend bucket name"
-    required: true
-    type: string
-  terraform_backend_dynamoDB:
-    description: "Terraform remote backend dynamodbTable name"
-    required: true
-    type: string
+    inputs:
+      command:
+        description: "Terraform command (Default is plan)"
+        required: false
+        type: string
+        default: 'plan'
+      environment:
+        description: "Environment name (Default is dev)"
+        required: false
+        type: string
+        default: 'dev'
+      name:
+        description: "Infra Name (Default is the github repo name)"
+        required: false
+        type: string
+        default: ${{ github.event.repository.name }}
+      aws_region:
+        description: "AWS Region Name (Default is eu-west-1)"
+        required: false
+        type: string
+        default: 'eu-west-1'
+      terraform_version:
+        description: "Terraform CLI Version (Default 1.1.3)"
+        required: false
+        type: string
+        default: '1.1.3'
+      terraform_working_dir:
+        description: "Terraform dir path in repo. (Default is ./terraform)"
+        required: false
+        type: string
+        default: './terraform'
+      terraform_backend_bucket:
+        description: "Terraform remote backend S3 bucket name to store the terraform state"
+        required: true
+        type: string
+      terraform_backend_dynamodb:
+        description: "Terraform remote backend dynamodbTable name to acquire state lock"
+        required: true
+        type: string
+
 ```
 
 ### Example Usage : This workflow can be used in three ways-
 
 #### 1. Use in regular terraform CI. (Automatic apply to non-prod when there is a commit to master/main)
 
-Create a `.github/workflows/terraform-CI.yaml` file and paste the below content.
+Create a `.github/workflows/terraform-ci.yaml` file and paste the below content.
 
 ```yaml
 ---
@@ -320,13 +325,13 @@ jobs:
     with:
       environment: dev
       command: apply
-      terraform_backend_bucket: s3-bucket-name
-      terraform_backend_dynamoDB: dynamo-DB table name
+      terraform_backend_bucket: S3 bucket name to store the terraform state
+      terraform_backend_dynamodb: dynamoDB table name for state locking
 ```
 
 #### 2. Use for PR Checks (run terraform `plan` in multiple environment when there is PR is raised to master/main)
 
-Create a `.github/workflows/terraform-PR.yaml` file and paste the below content.
+Create a `.github/workflows/terraform-pr.yaml` file and paste the below content.
 
 ```yaml
 ---
@@ -344,22 +349,22 @@ jobs:
     with:
       environment: dev
       command: plan
-      terraform_backend_bucket: s3-bucket-name
-      terraform_backend_dynamoDB:dynamo-DB table name
+      terraform_backend_bucket: S3 bucket name to store the terraform state
+      terraform_backend_dynamodb: dynamoDB table name for state locking
   
   terraform-prod:
     uses: mimiro-io/.github/.github/workflows/terraform.yaml@main
     with:
       environment: prod
       command: plan
-      terraform_backend_bucket: s3-bucket-name
-      terraform_backend_dynamoDB: dynamo-DB table name
+      terraform_backend_bucket: S3 bucket name to store the terraform state
+      terraform_backend_dynamodb: dynamoDB table name for state locking
 
 ```
 
 #### 3. Use for Manual Terraform Operations. (e.g Apply in Prod, Destroy Dev etc.)
 
-Create a `.github/workflows/terraform-WD.yaml` file and paste the below content.
+Create a `.github/workflows/terraform-wd.yaml` file and paste the below content.
 
 ```yaml
 ---
@@ -391,7 +396,7 @@ jobs:
     with:
       environment: ${{ github.event.inputs.environment }}
       command: ${{ github.event.inputs.command }}
-      terraform_backend_bucket: s3-bucket-name
-      terraform_backend_dynamoDB: dynamo-DB table name
+      terraform_backend_bucket: S3 bucket name to store the terraform state
+      terraform_backend_dynamodb: dynamoDB table name for state locking
 
 ```
