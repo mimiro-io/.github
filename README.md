@@ -14,6 +14,12 @@
 - [Flyway](#flyway)
   - [Add a workflow to run Flyway manually](#add-a-workflow-to-run-flyway-manually)
   - [Add a workflow to run Flyway automatically](#add-a-workflow-to-run-flyway-automatically)
+- [Terraform](#terraform)
+  - [Input Parameters](#input-parameters)
+  - [Example Usage : This workflow can be used in three ways-](#example-usage--this-workflow-can-be-used-in-three-ways-)
+    - [1. Use in regular terraform CI. (Automatic apply to non-prod when there is a commit to master/main)](#1-use-in-regular-terraform-ci-automatic-apply-to-non-prod-when-there-is-a-commit-to-mastermain)
+    - [2. Use for PR Checks (run terraform `plan` in multiple environment when there is PR is raised to master/main)](#2-use-for-pr-checks-run-terraform-plan-in-multiple-environment-when-there-is-pr-is-raised-to-mastermain)
+    - [3. Use for Manual Terraform Operations. (e.g Apply in Prod, Destroy Dev etc.)](#3-use-for-manual-terraform-operations-eg-apply-in-prod-destroy-dev-etc)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -243,4 +249,154 @@ jobs:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     secrets:
       ECR_REPO_POLICY: ${{ secrets.ECR_REPO_POLICY }}
+```
+
+## Terraform
+
+Reusable workflow for your terraform configuration. Can be used to perform common terraform operations.
+
+### Input Parameters
+
+Any or all of the below input parameters can be used by using `with:`.  
+
+[find example usage here](#example-usage--this-workflow-can-be-used-in-three-ways-)
+
+```yaml
+    inputs:
+      command:
+        description: "Terraform command (Default is plan)"
+        required: false
+        type: string
+        default: 'plan'
+      environment:
+        description: "Environment name (Default is dev)"
+        required: false
+        type: string
+        default: 'dev'
+      name:
+        description: "Infra Name (Default is the github repo name)"
+        required: false
+        type: string
+        default: ${{ github.event.repository.name }}
+      aws_region:
+        description: "AWS Region Name (Default is eu-west-1)"
+        required: false
+        type: string
+        default: 'eu-west-1'
+      terraform_version:
+        description: "Terraform CLI Version (Default 1.1.3)"
+        required: false
+        type: string
+        default: '1.1.3'
+      terraform_working_dir:
+        description: "Terraform dir path in repo. (Default is ./terraform)"
+        required: false
+        type: string
+        default: './terraform'
+      terraform_backend_bucket:
+        description: "Terraform remote backend S3 bucket name to store the terraform state"
+        required: true
+        type: string
+      terraform_backend_dynamodb:
+        description: "Terraform remote backend dynamodbTable name to acquire state lock"
+        required: true
+        type: string
+
+```
+
+### Example Usage : This workflow can be used in three ways-
+
+#### 1. Use in regular terraform CI. (Automatic apply to non-prod when there is a commit to master/main)
+
+Create a `.github/workflows/terraform-ci.yaml` file and paste the below content.
+
+```yaml
+---
+# CI - Continuous Integration
+# Terraform auto apply in dev when push to master
+name: terraform-CI
+on:
+ push:
+   branches: [ master ]
+
+jobs:
+  terraform:
+    uses: mimiro-io/.github/.github/workflows/terraform.yaml@main
+    with:
+      environment: dev
+      command: apply
+      terraform_backend_bucket: S3 bucket name to store the terraform state
+      terraform_backend_dynamodb: dynamoDB table name for state locking
+```
+
+#### 2. Use for PR Checks (run terraform `plan` in multiple environment whenever a PR is raised towards master/main)
+
+Create a `.github/workflows/terraform-pr.yaml` file and paste the below content.
+
+```yaml
+---
+# PR - Pull Request checks
+# Terraform plan for dev and prod, when PR is raised to master
+name: terraform-PR
+on:
+ pull_request:
+   branches: [ master ]
+
+jobs:
+
+  terraform-dev:
+    uses: mimiro-io/.github/.github/workflows/terraform.yaml@main
+    with:
+      environment: dev
+      command: plan
+      terraform_backend_bucket: S3 bucket name to store the terraform state
+      terraform_backend_dynamodb: dynamoDB table name for state locking
+  
+  terraform-prod:
+    uses: mimiro-io/.github/.github/workflows/terraform.yaml@main
+    with:
+      environment: prod
+      command: plan
+      terraform_backend_bucket: S3 bucket name to store the terraform state
+      terraform_backend_dynamodb: dynamoDB table name for state locking
+
+```
+
+#### 3. Use for Manual Terraform Operations. (e.g Apply in Prod, Destroy Dev etc.)
+
+Create a `.github/workflows/terraform-wd.yaml` file and paste the below content.
+
+```yaml
+---
+# WD - workflow_dispatch.  Manual trigger of terraform commands.
+# Run various terraform commands in any of the dev/prod environment. (eg. apply in prod)
+name: terraform-WD
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        description: Environment
+        options:
+          - dev
+          - prod
+      command:
+        type: choice
+        description: terraform command to be executed
+        options:
+          - plan
+          - apply
+          - destroy-plan
+          - destroy
+
+
+jobs:
+  terraform:
+    uses: mimiro-io/.github/.github/workflows/terraform.yaml@main
+    with:
+      environment: ${{ github.event.inputs.environment }}
+      command: ${{ github.event.inputs.command }}
+      terraform_backend_bucket: S3 bucket name to store the terraform state
+      terraform_backend_dynamodb: dynamoDB table name for state locking
+
 ```
