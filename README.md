@@ -259,7 +259,7 @@ Reusable workflow for your terraform configuration. Can be used to perform commo
 
 Any or all of the below input parameters can be used by using `with:`.  
 
-[find example usages here](#example-usage--this-workflow-can-be-used-in-three-ways-)
+[find example usage here](#example-usage--this-workflow-can-be-used-in-three-ways-)
 
 ```yaml
     inputs:
@@ -312,7 +312,7 @@ Create a `.github/workflows/terraform-ci.yaml` file and paste the below content.
 
 ```yaml
 ---
-# CI - Continous Integration
+# CI - Continuous Integration
 # Terraform auto apply in dev when push to master
 name: terraform-CI
 on:
