@@ -329,7 +329,7 @@ jobs:
       terraform_backend_dynamodb: dynamoDB table name for state locking
 ```
 
-#### 2. Use for PR Checks (run terraform `plan` in multiple environment when there is PR is raised to master/main)
+#### 2. Use for PR Checks (run terraform `plan` in multiple environment whenever a PR is raised towards master/main)
 
 Create a `.github/workflows/terraform-pr.yaml` file and paste the below content.
 
