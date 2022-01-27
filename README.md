@@ -113,6 +113,32 @@ jobs:
       trivy_exit_code : 0
 ```
 
+### Set build-time variables (similar to `docker build --build-arg`)
+
+If you wish you can set docker build time variables by supplying a
+list of key value pairs to `docker_build_args :`.
+
+For example, if your Dockerfile is using `ARG` , you can overwrite the default values of ARG with this option.
+
+```Dockerfile
+FROM ubuntu:latest
+ARG GREET=COOL_COMPANY
+RUN echo "Hey there! Welcome to $GREET" > greeting.txt
+CMD cat greeting.txt
+```
+
+This is an optional attribute. By default its always set to `FOO=BAR`
+
+Example usage:
+
+```yaml
+jobs:
+  AWS:
+    uses: mimiro-io/.github/.github/workflows/docker.yaml@main
+    with:
+      docker_build_args : GREET=MIMIRO ABC=XYZ
+```
+
 ### Custom name for app and image repository
 
 By default, your github repo name is used everywhere for naming resources.
