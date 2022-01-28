@@ -36,6 +36,8 @@ on:
     secrets:
       ECR_REPO_POLICY:
         required: true
+      GITHUB_PAT:
+        required: false
         
 jobs:
   ECR:
