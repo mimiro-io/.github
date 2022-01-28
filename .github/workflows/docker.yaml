@@ -36,7 +36,7 @@ on:
     secrets:
       ECR_REPO_POLICY:
         required: true
-      GITHUB_TOKEN:
+      CUSTOM_GITHUB_TOKEN:
         required: false
         
 jobs:
@@ -98,7 +98,7 @@ jobs:
           push: false
           tags: ${{ steps.set_default_tag.outputs.default_tag }} 
           build-args: ${{ inputs.docker_build_args }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
 
       - name: Trivy vulnerability scan
         uses : aquasecurity/trivy-action@master
