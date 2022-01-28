@@ -20,7 +20,7 @@ on:
         default : false
       docker_build_args:
         description: "Set build-time variables which can be passed as --build-args to docker build"	
-        required: falseß
+        required: false
         type: string
         default: "FOO=BAR"
       skip_irsa:
