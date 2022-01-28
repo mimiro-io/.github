@@ -135,7 +135,9 @@ jobs:
   AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
-      docker_build_args : GREET=MIMIRO ABC=XYZ
+      docker_build_args : | 
+        "KEY1=VAL1"
+        "KEY2=VAL2"
 ```
 
 ### Custom name for app and image repository
