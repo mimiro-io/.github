@@ -8,6 +8,7 @@
   - [Add a custom IAM policy for your application](#add-a-custom-iam-policy-for-your-application)
     - [Example IAM policy JSON](#example-iam-policy-json)
   - [Ignore Trivy Scan errors](#ignore-trivy-scan-errors)
+    - [Set build-time variables (similar to `docker build --build-arg`)](#set-build-time-variables-similar-to-docker-build---build-arg)
   - [Custom name for app and image repository](#custom-name-for-app-and-image-repository)
   - [Skip IRSA creation or Docker (ECR) jobs](#skip-irsa-creation-or-docker-ecr-jobs)
   - [Custom path/file name for IRSA's IAM policy JSON](#custom-pathfile-name-for-irsas-iam-policy-json)
