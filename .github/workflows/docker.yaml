@@ -141,8 +141,9 @@ jobs:
         with:
           push: true
           tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}},${{env.IMAGE_TAG_3}}
-          build-args: ${{ inputs.docker_build_args }}
-
+          build-args: |
+            ${{ inputs.docker_build_args }}
+            GITHUB_PAT=${{ secrets.GITHUB_PAT }}
   IRSA-DEV:
     name: IRSA-DEV
     runs-on : dev  
