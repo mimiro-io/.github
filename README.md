@@ -119,18 +119,16 @@ jobs:
 If you wish you can set docker build time variables by supplying a
 list of key value pairs to `docker_build_args :`.
 
-For example, if your Dockerfile is using `ARG` , you can overwrite the default values of ARG with this option.
+if your Dockerfile is using `ARG` then you can overwrite the default values of ARG with this option.
+for example -
 
 ```Dockerfile
-FROM ubuntu:latest
-ARG GREET=COOL_COMPANY
-RUN echo "Hey there! Welcome to $GREET" > greeting.txt
-CMD cat greeting.txt
+FROM busybox
+ARG KEY1
+RUN echo "Hei! $KEY1"
+ARG KEY2
+RUN echo "Hei! $KEY2"
 ```
-
-This is an optional attribute. By default its always set to `FOO=BAR`
-
-Example usage:
 
 ```yaml
 jobs:
@@ -153,7 +151,9 @@ jobs:
   AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
-      name : "my-app"
+      docker_build_args : | 
+        "KEY1=VAL1"
+        "KEY2=VAL2"
 ```
 
 ### Skip IRSA creation or Docker (ECR) jobs
