@@ -59,10 +59,27 @@ jobs:
         DB_PASS=$(aws ssm get-parameter --name ${{ inputs.ssm_db_pass }} --with-decryption | jq -r .Parameter.Value)
         DB_URL=$(cat ${FLYWAY_DIR}/conf/flyway.conf | grep '^flyway.url' | sed "s!^flyway.url=\([^/]*//\)[^:]*!\1${DB_HOST}!")
 
+        # Left hand version is minimum for adding option
+        SHORT_VERSION=$(echo ${{ inputs.command }} | grep -oP '^\d*\.?\d*')
+        if printf "5.1\n${SHORT_VERSION}" | sort -C -V; then
+          FLYWAY_OPTIONS="$FLYWAY_OPTIONS -validateOnMigrate=true"
+        fi
+
+        if printf "6.2\n${SHORT_VERSION}" | sort -C -V; then
+          FLYWAY_OPTIONS="$FLYWAY_OPTIONS -validateMigrationNaming=true -color=always"
+        fi
+
+        docker run \
+          ${FLYWAY_IMAGE} \
+          -url="${DB_URL}" \
+          -user="${DB_USER}" \
+          -password="${DB_PASS}" \
+          ${FLYWAY_OPTIONS} \
+          info
+
         docker run \
           --volume $(pwd)/${FLYWAY_DIR}/sql:/flyway/sql \
           ${FLYWAY_IMAGE} \
-          -validateOnMigrate="true" \
           -url="${DB_URL}" \
           -user="${DB_USER}" \
           -password="${DB_PASS}" \
