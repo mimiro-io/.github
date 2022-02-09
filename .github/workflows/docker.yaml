@@ -99,15 +99,15 @@ jobs:
             ${{ inputs.docker_build_args }}
             GITHUB_PAT=${{ secrets.GITHUB_PAT }}
 
-      - name: Trivy vulnerability scan
-        uses : aquasecurity/trivy-action@master
-        with :
-          image-ref: "${{ steps.set_default_tag.outputs.default_tag }}"
-          format: 'table'
-          exit-code: ${{ inputs.trivy_exit_code }}
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
+      # - name: Trivy vulnerability scan
+      #   uses : aquasecurity/trivy-action@master
+      #   with :
+      #     image-ref: "${{ steps.set_default_tag.outputs.default_tag }}"
+      #     format: 'table'
+      #     exit-code: ${{ inputs.trivy_exit_code }}
+      #     ignore-unfixed: true
+      #     vuln-type: 'os,library'
+      #     severity: 'CRITICAL,HIGH'
     
       - name: Push Latest Docker Image to ECR
         if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
