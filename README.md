@@ -8,6 +8,7 @@
   - [Add a custom IAM policy for your application](#add-a-custom-iam-policy-for-your-application)
     - [Example IAM policy JSON](#example-iam-policy-json)
   - [Ignore Trivy Scan errors](#ignore-trivy-scan-errors)
+  - [Set build-time variables (similar to `docker build --build-arg`)](#set-build-time-variables-similar-to-docker-build---build-arg)
   - [Custom name for app and image repository](#custom-name-for-app-and-image-repository)
   - [Skip IRSA creation or Docker (ECR) jobs](#skip-irsa-creation-or-docker-ecr-jobs)
   - [Custom path/file name for IRSA's IAM policy JSON](#custom-pathfile-name-for-irsas-iam-policy-json)
@@ -18,7 +19,7 @@
   - [Input Parameters](#input-parameters)
   - [Example Usage : This workflow can be used in three ways-](#example-usage--this-workflow-can-be-used-in-three-ways-)
     - [1. Use in regular terraform CI. (Automatic apply to non-prod when there is a commit to master/main)](#1-use-in-regular-terraform-ci-automatic-apply-to-non-prod-when-there-is-a-commit-to-mastermain)
-    - [2. Use for PR Checks (run terraform `plan` in multiple environment when there is PR is raised to master/main)](#2-use-for-pr-checks-run-terraform-plan-in-multiple-environment-when-there-is-pr-is-raised-to-mastermain)
+    - [2. Use for PR Checks (run terraform `plan` in multiple environment whenever a PR is raised towards master/main)](#2-use-for-pr-checks-run-terraform-plan-in-multiple-environment-whenever-a-pr-is-raised-towards-mastermain)
     - [3. Use for Manual Terraform Operations. (e.g Apply in Prod, Destroy Dev etc.)](#3-use-for-manual-terraform-operations-eg-apply-in-prod-destroy-dev-etc)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -111,6 +112,32 @@ jobs:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
       trivy_exit_code : 0
+```
+
+### Set build-time variables (similar to `docker build --build-arg`)
+
+If you wish you can set docker build time variables by supplying a
+list of key value pairs to `docker_build_args :`.
+
+if your Dockerfile is using `ARG` then you can overwrite the default values of ARG with this option.
+for example -
+
+```Dockerfile
+FROM busybox
+ARG KEY1
+RUN echo "Hei! $KEY1"
+ARG KEY2
+RUN echo "Hei! $KEY2"
+```
+
+```yaml
+jobs:
+  AWS:
+    uses: mimiro-io/.github/.github/workflows/docker.yaml@main
+    with:
+      docker_build_args : | 
+        KEY1=VAL1
+        KEY2=VAL2
 ```
 
 ### Custom name for app and image repository
