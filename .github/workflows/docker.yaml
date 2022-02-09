@@ -54,17 +54,20 @@ jobs:
       
       - name: Create/Verify Amazon ECR repo
         id: create-ecr-repo
+        if: github.event_name != 'pull_request'
         uses: int128/create-ecr-repository-action@v1
         with:
           repository: ${{ inputs.name }}  
 
       - name: Update ECR Repo Policy
         id: update-ecr-repo-policy
+        if: github.event_name != 'pull_request'
         run: |
           aws ecr set-repository-policy --policy-text ${{ secrets.ECR_REPO_POLICY }}  --repository-name ${{ inputs.name }}
       
       - name: Update ECR Lifecycle Policy
         id: update-ecr-lifecycle-policy
+        if: github.event_name != 'pull_request'
         run: |
           aws ecr put-lifecycle-policy --repository-name ${{ inputs.name }} --lifecycle-policy-text \
             "{\"rules\":[{\"rulePriority\":1,\"description\":\"Expire untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countUnit\":\"days\",\"countNumber\":1},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Expire old images with default tag\",\"selection\":{\"tagStatus\":\"tagged\",\"tagPrefixList\":[\"master-\"],\"countType\":\"imageCountMoreThan\",\"countNumber\":50},\"action\":{\"type\":\"expire\"}}]}",
@@ -82,14 +85,7 @@ jobs:
           echo ::set-output name=default_tag::${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:$GIT_BRANCH-$GIT_SHORT_SHA-$(date +%s)
         
       - name: Show Default Tag
-        run: echo "${{ steps.set_default_tag.outputs.default_tag }}"
-
-      # In this step, this action saves a list of existing images,
-      # the cache is created without them in the post run.
-      # It also restores the cache if it exists.
-      - name: Setup Docker Layer
-        uses: satackey/action-docker-layer-caching@v0.0.11
-        continue-on-error: true      
+        run: echo "${{ steps.set_default_tag.outputs.default_tag }}"    
 
       - name: Docker Build
         id: docker_build
@@ -97,6 +93,8 @@ jobs:
         with:
           push: false
           tags: ${{ steps.set_default_tag.outputs.default_tag }} 
+          cache-from: type=gha
+          cache-to: type=gha,mode=max      
           build-args: |
             ${{ inputs.docker_build_args }}
             GITHUB_PAT=${{ secrets.GITHUB_PAT }}
@@ -121,6 +119,8 @@ jobs:
         with:
           push: true
           tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max          
           build-args: |
             ${{ inputs.docker_build_args }}
             GITHUB_PAT=${{ secrets.GITHUB_PAT }}
@@ -140,6 +140,8 @@ jobs:
           IMAGE_TAG_3: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:${{ steps.get_tag.outputs.tag }}
         with:
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max      
           tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}},${{env.IMAGE_TAG_3}}
           build-args: |
             ${{ inputs.docker_build_args }}
