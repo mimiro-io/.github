@@ -93,21 +93,22 @@ jobs:
         with:
           push: false
           tags: ${{ steps.set_default_tag.outputs.default_tag }} 
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max      
           build-args: |
             ${{ inputs.docker_build_args }}
             GITHUB_PAT=${{ secrets.GITHUB_PAT }}
 
-      # - name: Trivy vulnerability scan
-      #   uses : aquasecurity/trivy-action@master
-      #   with :
-      #     image-ref: "${{ steps.set_default_tag.outputs.default_tag }}"
-      #     format: 'table'
-      #     exit-code: ${{ inputs.trivy_exit_code }}
-      #     ignore-unfixed: true
-      #     vuln-type: 'os,library'
-      #     severity: 'CRITICAL,HIGH'
+      - name: Trivy vulnerability scan
+        uses : aquasecurity/trivy-action@master
+        with :
+          image-ref: "${{ steps.set_default_tag.outputs.default_tag }}"
+          format: 'table'
+          exit-code: ${{ inputs.trivy_exit_code }}
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
     
       - name: Push Latest Docker Image to ECR
         if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
@@ -119,6 +120,7 @@ jobs:
         with:
           push: true
           tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}}
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max          
           build-args: |
@@ -140,6 +142,7 @@ jobs:
           IMAGE_TAG_3: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:${{ steps.get_tag.outputs.tag }}
         with:
           push: true
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max      
           tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}},${{env.IMAGE_TAG_3}}
