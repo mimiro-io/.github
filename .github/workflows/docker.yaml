@@ -72,10 +72,11 @@ jobs:
           aws ecr put-lifecycle-policy --repository-name ${{ inputs.name }} --lifecycle-policy-text \
             "{\"rules\":[{\"rulePriority\":1,\"description\":\"Expire untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countUnit\":\"days\",\"countNumber\":1},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Expire old images with default tag\",\"selection\":{\"tagStatus\":\"tagged\",\"tagPrefixList\":[\"master-\"],\"countType\":\"imageCountMoreThan\",\"countNumber\":50},\"action\":{\"type\":\"expire\"}}]}",
 
-
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+        with:
+           skip-logout: true  #Only set to true if the runner server is having multiple runner instances on it
                  
       - name: Set Default Image Tag
         id: set_default_tag
