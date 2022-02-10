@@ -60,7 +60,7 @@ jobs:
         DB_URL=$(cat ${FLYWAY_DIR}/conf/flyway.conf | grep '^flyway.url' | sed "s!^flyway.url=\([^/]*//\)[^:]*!\1${DB_HOST}!")
 
         # Left hand version is minimum for adding option
-        SHORT_VERSION=$(echo ${{ inputs.command }} | grep -oP '^\d*\.?\d*')
+        SHORT_VERSION=$(echo ${{ inputs.version }} | grep -oP '^\d*\.?\d*')
         if printf "5.1\n${SHORT_VERSION}" | sort -C -V; then
           FLYWAY_OPTIONS="$FLYWAY_OPTIONS -validateOnMigrate=true"
         fi
