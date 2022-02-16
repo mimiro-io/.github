@@ -3,7 +3,7 @@ name: Reusable CI workflow for Docker Build & Push to ECR
 on:
   workflow_call:
     inputs:
-      name: 
+      name:
         description: "Application Name overwrite (Default is the github repo name)"
         required: false
         type: string
@@ -12,14 +12,14 @@ on:
         description: "if set to 0, workflow will ignore trivy scan errors (not recommended)"
         required: false
         type: number
-        default : 1
+        default: 1
       skip_docker:
         description: "if set to true, workflow will skip docker build and ECR push"
         required: false
         type: boolean
-        default : false
+        default: false
       docker_build_args:
-        description: "Set build-time variables which can be passed as --build-args to docker build"	
+        description: "Set build-time variables which can be passed as --build-args to docker build"
         required: false
         type: string
         default: "FOO=BAR"
@@ -27,44 +27,45 @@ on:
         description: "if set to true, workflow will skip IRSA creation"
         required: false
         type: boolean
-        default : false
+        default: false
       iam_policies_json_file:
         description: "relative path to iam policy json. default is ./ci/policies.json"
         required: false
         type: string
-        default : './ci/policies.json'
+        default: './ci/policies.json'
     secrets:
       ECR_REPO_POLICY:
         required: true
       GITHUB_PAT:
         required: false
-        
+
 jobs:
-  ECR:
-    name: ECR
+  DEV-ECR:
+    needs: [DEV-IRSA]
+    name: DEV ECR
     runs-on: ops
-    if : inputs.skip_docker == false
+    if: github.event_name != 'release' && inputs.skip_docker == false
     steps:
       - uses: actions/checkout@v2
-      
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: eu-west-1
-      
+
       - name: Create/Verify Amazon ECR repo
         id: create-ecr-repo
         if: github.event_name != 'pull_request'
         uses: int128/create-ecr-repository-action@v1
         with:
-          repository: ${{ inputs.name }}  
+          repository: ${{ inputs.name }}
 
       - name: Update ECR Repo Policy
         id: update-ecr-repo-policy
         if: github.event_name != 'pull_request'
         run: |
           aws ecr set-repository-policy --policy-text ${{ secrets.ECR_REPO_POLICY }}  --repository-name ${{ inputs.name }}
-      
+
       - name: Update ECR Lifecycle Policy
         id: update-ecr-lifecycle-policy
         if: github.event_name != 'pull_request'
@@ -76,15 +77,15 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
         with:
-           skip-logout: true  #Only set to true if the runner server is having multiple runner instances on it
-                 
+          skip-logout: true  # Only set to true if the runner server is having multiple runner instances on it
+
       - name: Set Default Image Tag
         id: set_default_tag
         run: |
           export GIT_BRANCH=$(echo ${{ github.ref }} | cut -d / -f 3)
           export GIT_SHORT_SHA=$(git rev-parse --short HEAD)
           echo ::set-output name=default_tag::${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:$GIT_BRANCH-$GIT_SHORT_SHA-$(date +%s)
-        
+
       - name: Show Default Tag
         run: echo "${{ steps.set_default_tag.outputs.default_tag }}"
 
@@ -96,24 +97,24 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: false
-          tags: ${{ steps.set_default_tag.outputs.default_tag }} 
+          tags: ${{ steps.set_default_tag.outputs.default_tag }}
           load: true
           cache-from: type=gha
-          cache-to: type=gha,mode=max      
+          cache-to: type=gha,mode=max
           build-args: |
             ${{ inputs.docker_build_args }}
             GITHUB_PAT=${{ secrets.GITHUB_PAT }}
 
       - name: Trivy vulnerability scan
-        uses : aquasecurity/trivy-action@master
-        with :
+        uses: aquasecurity/trivy-action@master
+        with:
           image-ref: "${{ steps.set_default_tag.outputs.default_tag }}"
           format: 'table'
           exit-code: ${{ inputs.trivy_exit_code }}
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-    
+
       - name: Push Latest Docker Image to ECR
         if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
         id: docker_push
@@ -125,85 +126,110 @@ jobs:
           push: true
           tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}}
           cache-from: type=gha
-          cache-to: type=gha,mode=max          
+          cache-to: type=gha,mode=max
           build-args: |
             ${{ inputs.docker_build_args }}
             GITHUB_PAT=${{ secrets.GITHUB_PAT }}
-            
-      - name: Get Release Tag
-        if: github.event_name == 'release'
-        id: get_tag
-        run: echo ::set-output name=tag::$(echo $GITHUB_REF | cut -d / -f 3)
 
-      - name: Push Image with Release Tag to ECR for published release
-        if: github.event_name == 'release' && github.event.action == 'published'
-        id: docker_push_release
-        uses: docker/build-push-action@v2
-        env:
-          IMAGE_TAG_1: ${{ steps.set_default_tag.outputs.default_tag }}
-          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:latest
-          IMAGE_TAG_3: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:${{ steps.get_tag.outputs.tag }}
+  PROD-ECR:
+    needs: [PROD-IRSA]
+    name: PROD ECR
+    runs-on: ops
+    if: github.event_name == 'release'
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max      
-          tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}},${{env.IMAGE_TAG_3}}
-          build-args: |
-            ${{ inputs.docker_build_args }}
-            GITHUB_PAT=${{ secrets.GITHUB_PAT }}
-  IRSA-DEV:
-    name: IRSA-DEV
-    runs-on : dev  
-    if : inputs.skip_irsa == false
+          aws-region: eu-west-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Find existing image
+        id: get_image
+        run: |
+          GITHUB_SHA_SHORT=$(git rev-parse --short HEAD)
+          ECR_TAG=$(aws ecr list-images --repository-name ${{ inputs.name }} --query "imageIds[?contains(imageTag, '$GITHUB_SHA_SHORT')].[imageTag]" --output text | head -n1)
+          if [ -z "$ECR_TAG" ]; then
+            echo "ERROR: Could not find image in ECR matching the release target ref $GITHUB_SHA_SHORT"
+            exit 1
+          fi
+          IMAGE=${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:$ECR_TAG
+
+          echo "Found image $IMAGE in ECR matching the release target ref $GITHUB_SHA_SHORT"
+          echo ::set-output name=image::$IMAGE
+
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "${{ steps.get_image.outputs.image }}"
+          format: 'table'
+          exit-code: ${{ inputs.trivy_exit_code }}
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push image with release tag
+        run: |
+          IMAGE=${{ steps.get_image.outputs.image }}
+          NEW_IMAGE=${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:$GITHUB_REF_NAME
+
+          docker pull $IMAGE
+          docker tag $IMAGE $NEW_IMAGE
+          docker push $NEW_IMAGE
+
+  DEV-IRSA:
+    name: DEV IRSA
+    runs-on: dev
+    if: github.event_name != 'release' && inputs.skip_irsa == false
     steps:
       - name: Checkout
-        uses: actions/checkout@v2  
+        uses: actions/checkout@v2
 
-      - name : checkout mimiro-io/.github
+      - name: checkout mimiro-io/.github
         uses: actions/checkout@v2
         with:
           repository: mimiro-io/.github
           ref: main
           path: ./reusable-flow/
-      
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: eu-west-1
-     
+
       - name: IAM Role for Service Account
         if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
         run: |
           python3 -m pip install boto3
-          python3 --version          
+          python3 --version
           if [ -f ${{ inputs.iam_policies_json_file }} ]; then
               echo "${{ inputs.iam_policies_json_file }} exists. will be attached as inline policy to Role"
               python3 ./reusable-flow/script/setup-iam.py \
               --iam-policy-file="${{ inputs.iam_policies_json_file }}" \
-              --app-name=${{ inputs.name }}          
-          else 
+              --app-name=${{ inputs.name }}
+          else
               echo "${{ inputs.iam_policies_json_file }} does not exist. No policy will be attached to the role "
               python3 ./reusable-flow/script/setup-iam.py \
-              --app-name=${{ inputs.name }}  
+              --app-name=${{ inputs.name }}
           fi
-          
 
-  IRSA-PROD:
-    name: IRSA-PROD
-    needs: IRSA-DEV
-    runs-on : prod   
-    if : inputs.skip_irsa == false
+  PROD-IRSA:
+    name: PROD IRSA
+    runs-on: prod
+    if: github.event_name == 'release' && inputs.skip_irsa == false
     steps:
       - name: Checkout
-        uses: actions/checkout@v2  
+        uses: actions/checkout@v2
 
-      - name : checkout mimiro-io/.github
+      - name: checkout mimiro-io/.github
         uses: actions/checkout@v2
         with:
           repository: mimiro-io/.github
           ref: main
           path: ./reusable-flow/
-      
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -213,16 +239,14 @@ jobs:
         if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
         run: |
           python3 -m pip install boto3
-          python3 --version 
+          python3 --version
           if [ -f ${{ inputs.iam_policies_json_file }} ]; then
               echo "IAM policy exists. will be attached as inline policy to Role"
               python3 ./reusable-flow/script/setup-iam.py \
               --iam-policy-file="${{ inputs.iam_policies_json_file }}" \
-              --app-name=${{ inputs.name }}          
-          else 
+              --app-name=${{ inputs.name }}
+          else
               echo "${{ inputs.iam_policies_json_file }} does not exist. No policy will be attached to the role "
               python3 ./reusable-flow/script/setup-iam.py \
-              --app-name=${{ inputs.name }}  
+              --app-name=${{ inputs.name }}
           fi
-        
-
