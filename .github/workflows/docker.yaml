@@ -40,10 +40,11 @@ on:
         required: false
 
 jobs:
-  ECR:
-    name: ECR
+  DEV-ECR:
+    needs: [DEV-IRSA]
+    name: DEV ECR
     runs-on: ops
-    if: inputs.skip_docker == false
+    if: github.event_name != 'release' && inputs.skip_docker == false
     steps:
       - uses: actions/checkout@v2
 
@@ -130,31 +131,58 @@ jobs:
             ${{ inputs.docker_build_args }}
             GITHUB_PAT=${{ secrets.GITHUB_PAT }}
 
-      - name: Get Release Tag
-        if: github.event_name == 'release'
-        id: get_tag
-        run: echo ::set-output name=tag::$(echo $GITHUB_REF | cut -d / -f 3)
-
-      - name: Push Image with Release Tag to ECR for published release
-        if: github.event_name == 'release' && github.event.action == 'published'
-        id: docker_push_release
-        uses: docker/build-push-action@v2
-        env:
-          IMAGE_TAG_1: ${{ steps.set_default_tag.outputs.default_tag }}
-          IMAGE_TAG_2: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:latest
-          IMAGE_TAG_3: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:${{ steps.get_tag.outputs.tag }}
+  PROD-ECR:
+    needs: [PROD-IRSA]
+    name: PROD ECR
+    runs-on: ops
+    if: github.event_name == 'release'
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: ${{env.IMAGE_TAG_1}},${{env.IMAGE_TAG_2}},${{env.IMAGE_TAG_3}}
-          build-args: |
-            ${{ inputs.docker_build_args }}
-            GITHUB_PAT=${{ secrets.GITHUB_PAT }}
-  IRSA-DEV:
-    name: IRSA-DEV
+          aws-region: eu-west-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Find existing image
+        id: get_image
+        run: |
+          GITHUB_SHA_SHORT=$(git rev-parse --short HEAD)
+          ECR_TAG=$(aws ecr list-images --repository-name ${{ inputs.name }} --query "imageIds[?contains(imageTag, '$GITHUB_SHA_SHORT')].[imageTag]" --output text | head -n1)
+          if [ -z "$ECR_TAG" ]; then
+            echo "ERROR: Could not find image in ECR matching the release target ref $GITHUB_SHA_SHORT"
+            exit 1
+          fi
+          IMAGE=${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:$ECR_TAG
+
+          echo "Found image $IMAGE in ECR matching the release target ref $GITHUB_SHA_SHORT"
+          echo ::set-output name=image::$IMAGE
+
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "${{ steps.get_image.outputs.image }}"
+          format: 'table'
+          exit-code: ${{ inputs.trivy_exit_code }}
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push image with release tag
+        run: |
+          IMAGE=${{ steps.get_image.outputs.image }}
+          NEW_IMAGE=${{ steps.login-ecr.outputs.registry }}/${{ inputs.name }}:$GITHUB_REF_NAME
+
+          docker pull $IMAGE
+          docker tag $IMAGE $NEW_IMAGE
+          docker push $NEW_IMAGE
+
+  DEV-IRSA:
+    name: DEV IRSA
     runs-on: dev
-    if: inputs.skip_irsa == false
+    if: github.event_name != 'release' && inputs.skip_irsa == false
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -187,12 +215,10 @@ jobs:
               --app-name=${{ inputs.name }}
           fi
 
-
-  IRSA-PROD:
-    name: IRSA-PROD
-    needs: IRSA-DEV
+  PROD-IRSA:
+    name: PROD IRSA
     runs-on: prod
-    if: inputs.skip_irsa == false
+    if: github.event_name == 'release' && inputs.skip_irsa == false
     steps:
       - name: Checkout
         uses: actions/checkout@v2
