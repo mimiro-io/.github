@@ -21,7 +21,7 @@ def get_eks_oidc():
         response = eks_client.describe_cluster(name=(response['clusters'])[0])
         cluster_details=(response['cluster'])
         oidc_issuer=((cluster_details["identity"])["oidc"])["issuer"]
-        return oidc_issuer.replace("https://","") 
+        return oidc_issuer.replace("https://","")
     except ClientError as error:
             return 'Unexpected error occurred while fetching cluster details', error
 
@@ -52,13 +52,13 @@ def attach_policy(account_id,role_name,policy_document_file):
     # Opening Policy File
     json_file=open(policy_document_file)
     policy_document=json.dumps(json.load(json_file))
-    
+
     #Remove terraform characters for account_id.(if there are any)
     policy_document=policy_document.replace("${data.aws_caller_identity.current.account_id}",account_id)
-    
+
     #Populate Account Number replace variable
     policy_document=policy_document.replace("${AWS_ACCOUNT_ID}",account_id)
-    
+
     try:
         response = iam_client.put_role_policy(
             RoleName=role_name,
@@ -71,7 +71,7 @@ def attach_policy(account_id,role_name,policy_document_file):
         exit(1)
     print ('IRSA:',role_name,': Policy successfully updated')
     json_file.close()
-    
+
 
 def main():
     app_name=args.app_name
@@ -83,7 +83,7 @@ def main():
     k8s_namespace = 'mimiro' #TODO remove hardcoding
 
     account_id = boto3.client('sts').get_caller_identity().get('Account')
-    
+
     print('IRSA:',role_name, ': Setup IAM Role & Policy for the k8s service account')
     iam_client = boto3.client('iam')
     assume_role_policy=get_assume_role_policy(account_id,app_name,k8s_namespace)
@@ -102,7 +102,7 @@ def main():
         print('IRSA:',role_name, ': Role successfully updated')
         if iam_policy_file is not None:
             print('IRSA:',role_name, ': Updating IAM Policy')
-            attach_policy(account_id,role_name,iam_policy_file)   
+            attach_policy(account_id,role_name,iam_policy_file)
     except ClientError as error:
         if error.response['Error']['Code'] == 'NoSuchEntity':
             print ('IRSA:',role_name,': Role does not exist.Creating new role and policy')

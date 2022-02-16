@@ -135,7 +135,7 @@ jobs:
   AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
-      docker_build_args : | 
+      docker_build_args : |
         KEY1=VAL1
         KEY2=VAL2
 ```
@@ -284,7 +284,7 @@ Reusable workflow for your terraform configuration. Can be used to perform commo
 
 ### Input Parameters
 
-Any or all of the below input parameters can be used by using `with:`.  
+Any or all of the below input parameters can be used by using `with:`.
 
 [find example usage here](#example-usage--this-workflow-can-be-used-in-three-ways-)
 
@@ -378,7 +378,7 @@ jobs:
       command: plan
       terraform_backend_bucket: S3 bucket name to store the terraform state
       terraform_backend_dynamodb: dynamoDB table name for state locking
-  
+
   terraform-prod:
     uses: mimiro-io/.github/.github/workflows/terraform.yaml@main
     with:
