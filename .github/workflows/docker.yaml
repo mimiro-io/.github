@@ -44,7 +44,7 @@ jobs:
     needs: [DEV-IRSA]
     name: DEV ECR
     runs-on: ops
-    if: github.event_name != 'release' && inputs.skip_docker == false
+    if: always() && github.event_name != 'release' && inputs.skip_docker == false && (needs.DEV-IRSA.result == 'success' || needs.DEV-IRSA.result == 'skipped')
     steps:
       - uses: actions/checkout@v2
 
@@ -135,7 +135,7 @@ jobs:
     needs: [PROD-IRSA]
     name: PROD ECR
     runs-on: ops
-    if: github.event_name == 'release'
+    if: always() && github.event_name == 'release' && (needs.PROD-IRSA.result == 'success' || needs.PROD-IRSA.result == 'skipped')
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
