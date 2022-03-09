@@ -14,6 +14,11 @@ on:
         required: false
         type: string
         default: 'dev'
+      actions_runner:
+        description: "GitHub Actions Runner Label (Default in the value provided in environment input)"
+        required: false
+        type: string
+        default: ${{ inputs.environment }}
       name:
         description: "Infra Name (Default is the github repo name)"
         required: false
@@ -47,7 +52,7 @@ jobs:
   terraform:
     name: ${{ inputs.environment }}/${{ inputs.command }}
 
-    runs-on: ${{ inputs.environment }}
+    runs-on: ${{ inputs.actions_runner }}
 
     defaults:
       run:
