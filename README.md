@@ -72,14 +72,6 @@ https://awspolicygen.s3.amazonaws.com/policygen.html can be used to create IAM p
     "Statement": [
         {
             "Effect": "Allow",
-            "Action": "s3:*",
-            "Resource": [
-                "arn:aws:s3:::my-s3-bucket",
-                "arn:aws:s3:::my-s3-bucket/*"
-            ]
-        },
-        {
-            "Effect": "Allow",
             "Action": [
                 "ssm:PutParameter",
                 "ssm:GetParametersByPath",
@@ -91,6 +83,14 @@ https://awspolicygen.s3.amazonaws.com/policygen.html can be used to create IAM p
                 "arn:aws:ssm:eu-west-1:${AWS_ACCOUNT_ID}:parameter/application/app-name/*",
                 "arn:aws:ssm:eu-west-1:${AWS_ACCOUNT_ID}:parameter/application/shared/*",
                 "arn:aws:ssm:eu-west-1:${AWS_ACCOUNT_ID}:parameter/shared/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": "s3:*",
+            "Resource": [
+                "arn:aws:s3:::my-s3-bucket",
+                "arn:aws:s3:::my-s3-bucket/*"
             ]
         }
     ]
