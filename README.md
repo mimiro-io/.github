@@ -21,6 +21,8 @@
     - [1. Use in regular terraform CI. (Automatic apply to non-prod when there is a commit to master/main)](#1-use-in-regular-terraform-ci-automatic-apply-to-non-prod-when-there-is-a-commit-to-mastermain)
     - [2. Use for PR Checks (run terraform `plan` in multiple environment whenever a PR is raised towards master/main)](#2-use-for-pr-checks-run-terraform-plan-in-multiple-environment-whenever-a-pr-is-raised-towards-mastermain)
     - [3. Use for Manual Terraform Operations. (e.g Apply in Prod, Destroy Dev etc.)](#3-use-for-manual-terraform-operations-eg-apply-in-prod-destroy-dev-etc)
+- [Docker Hub](#docker-hub)
+  - [Custom name for the Docker Hub image repository](#custom-name-for-the-docker-hub-image-repository)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -426,4 +428,44 @@ jobs:
       terraform_backend_bucket: S3 bucket name to store the terraform state
       terraform_backend_dynamodb: dynamoDB table name for state locking
 
+```
+
+## Docker Hub
+
+This workflow uses your Dockerfile to build and push a Docker image to Docker Hub.
+
+To use this workflow, create a yaml file in your repo named `.github/workflows/ci.yaml` and paste the below content.
+
+```yaml
+name: CI
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  release:
+    types:
+      - published
+jobs:
+  DockerHub:
+    uses: mimiro-io/.github/.github/workflows/dockerhub.yaml@main
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+```
+
+### Custom name for the Docker Hub image repository
+
+By default, the GitHub repo name is used as the Docker Hub repository name.
+
+If you wish to use a custom name for the repository then you can override this by using the `name` parameter.
+
+Example usage:
+
+```yaml
+jobs:
+  DockerHub:
+    uses: mimiro-io/.github/.github/workflows/dockerhub.yaml@main
+    with:
+      name : "some-other-name"
 ```
