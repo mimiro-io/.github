@@ -17,8 +17,7 @@ on:
 jobs:
   docker:
     runs-on: ops
-    outputs:
-      image_tag: ${{ steps.image_tag.outputs.image_tag }}
+    name: docker
 
     steps:
       - name: Checkout code
