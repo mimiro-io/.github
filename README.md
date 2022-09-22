@@ -17,7 +17,7 @@
   - [Add a workflow to run Flyway automatically](#add-a-workflow-to-run-flyway-automatically)
 - [Terraform](#terraform)
   - [Input Parameters](#input-parameters)
-  - [Example Usage : This workflow can be used in three ways-](#example-usage--this-workflow-can-be-used-in-three-ways-)
+  - [Example Usage: This workflow can be used in three ways-](#example-usage--this-workflow-can-be-used-in-three-ways-)
     - [1. Use in regular terraform CI. (Automatic apply to non-prod when there is a commit to master/main)](#1-use-in-regular-terraform-ci-automatic-apply-to-non-prod-when-there-is-a-commit-to-mastermain)
     - [2. Use for PR Checks (run terraform `plan` in multiple environment whenever a PR is raised towards master/main)](#2-use-for-pr-checks-run-terraform-plan-in-multiple-environment-whenever-a-pr-is-raised-towards-mastermain)
     - [3. Use for Manual Terraform Operations. (e.g Apply in Prod, Destroy Dev etc.)](#3-use-for-manual-terraform-operations-eg-apply-in-prod-destroy-dev-etc)
@@ -103,7 +103,7 @@ https://awspolicygen.s3.amazonaws.com/policygen.html can be used to create IAM p
 ### Ignore Trivy Scan errors
 
 Its not recommended to ignore trive vulnerability scan, but if its not possible to fix
-certain vulnerabilities, then you can skip this check by supplying `trivy_exit_code : 0`.
+certain vulnerabilities, then you can skip this check by supplying `trivy_exit_code: 0`.
 This is an optional attribute. By default its always set to `1`.
 
 Example usage:
@@ -113,13 +113,13 @@ jobs:
   AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
-      trivy_exit_code : 0
+      trivy_exit_code: 0
 ```
 
 ### Set build-time variables (similar to `docker build --build-arg`)
 
 If you wish you can set docker build time variables by supplying a
-list of key value pairs to `docker_build_args :`.
+list of key value pairs to `docker_build_args:`.
 
 if your Dockerfile is using `ARG` then you can overwrite the default values of ARG with this option.
 for example -
@@ -137,7 +137,7 @@ jobs:
   AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
-      docker_build_args : |
+      docker_build_args: |
         KEY1=VAL1
         KEY2=VAL2
 ```
@@ -155,7 +155,7 @@ jobs:
   AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
-      name : "my-app"
+      name: "my-app"
 ```
 
 ### Skip IRSA creation or Docker (ECR) jobs
@@ -169,7 +169,7 @@ jobs:
   AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
-      skip_docker : true
+      skip_docker: true
 ```
 
 ### Custom path/file name for IRSA's IAM policy JSON
@@ -183,7 +183,7 @@ jobs:
   AWS:
     uses: mimiro-io/.github/.github/workflows/docker.yaml@main
     with:
-      iam_policies_json_file : iam/json/my-iam.json
+      iam_policies_json_file: iam/json/my-iam.json
 ```
 
 ## Flyway
@@ -333,7 +333,7 @@ Any or all of the below input parameters can be used by using `with:`.
 
 ```
 
-### Example Usage : This workflow can be used in three ways-
+### Example Usage: This workflow can be used in three ways-
 
 #### 1. Use in regular terraform CI. (Automatic apply to non-prod when there is a commit to master/main)
 
@@ -467,5 +467,5 @@ jobs:
   DockerHub:
     uses: mimiro-io/.github/.github/workflows/dockerhub.yaml@main
     with:
-      name : "some-other-name"
+      name: "some-other-name"
 ```
