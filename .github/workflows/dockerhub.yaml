@@ -107,5 +107,5 @@ jobs:
         id: dockerhub_latest
         if: github.event_name == 'release'
         run: |
-          docker ${{ steps.image_tag.outputs.image_tag }} ${{ inputs.name }}:latest
+          docker tag ${{ steps.image_tag.outputs.image_tag }} ${{ inputs.name }}:latest
           docker push ${{ inputs.name }}:latest
