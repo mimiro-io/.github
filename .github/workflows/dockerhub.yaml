@@ -61,6 +61,16 @@ jobs:
             echo ::set-output name=image_tag:: ${{ inputs.name }}:${{ steps.semver-tag.outputs.tag }}-$GITHUB_RUN_NUMBER-unstable
           fi
 
+      - name: Write version file
+        id: version_file
+        run: |
+          versionTag=${{ steps.image_tag.outputs.image_tag }}
+          JSON_STRING=$( jq -n \
+                  --arg ver "$versionTag" \
+                  --arg sha "$GITHUB_SHA" \
+                  '{version: $ver, commit: $sha}' )
+          echo "$JSON_STRING" > "VERSION.json"
+
       # Login to Docker registry except on PR
       - name: Login to DockerHub
         id: docker_login
