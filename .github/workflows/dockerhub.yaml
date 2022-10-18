@@ -8,6 +8,11 @@ on:
         required: false
         type: string
         default: ${{ github.event.repository.name }}
+      version_file:
+        description: "Output file path for writing semver version to file"
+        required: false
+        type: string
+        default: VERSION.json
     secrets:
       DOCKERHUB_USERNAME:
         required: true
@@ -60,6 +65,17 @@ jobs:
             echo "Setting Unstable Image"
             echo ::set-output name=image_tag:: ${{ inputs.name }}:${{ steps.semver-tag.outputs.tag }}-$GITHUB_RUN_NUMBER-unstable
           fi
+
+      - name: Write version file
+        id: version_file
+        run: |
+          versionTag=${{ steps.image_tag.outputs.image_tag }}
+          JSON_STRING=$( jq -n \
+                  --arg ver "$versionTag" \
+                  --arg sha "${GITHUB_SHA::7}" \
+                  --arg date "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+                  '{version: $ver, commit: $sha, build_date: $date}' )
+          echo "$JSON_STRING" > "${{ inputs.version_file }}"
 
       # Login to Docker registry except on PR
       - name: Login to DockerHub
