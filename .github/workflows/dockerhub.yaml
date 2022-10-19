@@ -60,10 +60,10 @@ jobs:
           if [ ${{ github.event_name }} == 'release' ]
           then
             echo "Setting Stable Image Tag"
-            echo ::set-output name=image_tag:: ${{ inputs.name }}:$(echo $GITHUB_REF | cut -d / -f 3)
+            echo ::set-output name=image_tag::${{ inputs.name }}:$(echo $GITHUB_REF | cut -d / -f 3)
           else
             echo "Setting Unstable Image"
-            echo ::set-output name=image_tag:: ${{ inputs.name }}:${{ steps.semver-tag.outputs.tag }}-$GITHUB_RUN_NUMBER-unstable
+            echo ::set-output name=image_tag::${{ inputs.name }}:${{ steps.semver-tag.outputs.tag }}-$GITHUB_RUN_NUMBER-unstable
           fi
 
       - name: Write version file
