@@ -135,7 +135,7 @@ jobs:
     needs: [PROD-IRSA]
     name: PROD ECR
     runs-on: ops
-    if: always() && github.event_name == 'release' && (needs.PROD-IRSA.result == 'success' || needs.PROD-IRSA.result == 'skipped')
+    if: always() && github.event_name == 'release' && inputs.skip_docker == false && (needs.PROD-IRSA.result == 'success' || needs.PROD-IRSA.result == 'skipped')
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
