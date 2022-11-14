@@ -59,12 +59,15 @@ jobs:
         with:
           skip-logout: true  # Only set to true if the runner server is having multiple runner instances on it
 
-      - name: Create/Verify Amazon ECR repo
-        id: create-ecr-repo
+      - name: Ensure Amazon ECR repo exists
+        id: ensure-ecr-repo
         if: github.event_name != 'pull_request'
-        uses: int128/create-ecr-repository-action@v1
-        with:
-          repository: ${{ inputs.name }}
+        run: |
+          aws ecr describe-repositories --repository-names ${{ inputs.name }} 2>&1 > /dev/null
+          status=$?
+          if [[ ! "${status}" -eq 0 ]]; then
+            echo aws ecr create-repository --repository-name ${{ inputs.name }}
+          fi
 
       - name: Update ECR Repo Policy
         id: update-ecr-repo-policy
