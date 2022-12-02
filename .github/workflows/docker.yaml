@@ -63,7 +63,8 @@ jobs:
         id: ensure-ecr-repo
         if: github.event_name != 'pull_request'
         run: |
-          aws ecr describe-repositories --repository-names ${{ inputs.name }} 2>&1 > /dev/null
+          set +e
+          aws ecr describe-repositories --repository-names ${{ inputs.name }} >/dev/null 2>&1
           status=$?
           if [[ ! "${status}" -eq 0 ]]; then
             aws ecr create-repository --repository-name ${{ inputs.name }}
