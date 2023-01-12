@@ -154,7 +154,7 @@ jobs:
         id: get_image
         run: |
           GITHUB_SHA_SHORT="${GITHUB_SHA::7}"
-          ECR_TAG=$(aws ecr list-images --repository-name ${{ inputs.name }} --query 'imageIds[?imageTag!=`null`] | [?contains(imageTag, '$GITHUB_SHA_SHORT')].[imageTag]' --output text | head -n1)
+          ECR_TAG=$(aws ecr list-images --repository-name ${{ inputs.name }} --query 'imageIds[?imageTag!=`null`] | [?contains(imageTag, `'$GITHUB_SHA_SHORT'`)].[imageTag]' --output text | head -n1)
           if [ -z "$ECR_TAG" ]; then
             echo "ERROR: Could not find image in ECR matching the release target ref $GITHUB_SHA_SHORT"
             exit 1
