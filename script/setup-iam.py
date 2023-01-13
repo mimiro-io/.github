@@ -6,6 +6,7 @@ import argparse
 parser=argparse.ArgumentParser()
 parser.add_argument('--app-name', help='Name of the application')
 parser.add_argument('--iam-policy-file', help='path of the policy json file')
+parser.add_argument('--k8s_namespace', help='namespace of the application')
 args=parser.parse_args()
 
 #IRSA = IAM Role for Service Account
@@ -76,15 +77,15 @@ def attach_policy(account_id,role_name,policy_document_file):
 def main():
     app_name=args.app_name
     iam_policy_file=args.iam_policy_file
+    k8s_namespace=args.k8s_namespace
     if app_name is None:
         print ("Error! Pls provide app name in --app-name")
         exit(1)
     role_name = "mimiro-k8s-"+app_name ## TODO- Get prefix from eks cluster name
-    k8s_namespace = 'mimiro' #TODO remove hardcoding
 
     account_id = boto3.client('sts').get_caller_identity().get('Account')
 
-    print('IRSA:',role_name, ': Setup IAM Role & Policy for the k8s service account')
+    print('IRSA:',role_name, ': Setup IAM Role & Policy for the k8s service account in k8s_namespace:', k8s_namespace)
     iam_client = boto3.client('iam')
     assume_role_policy=get_assume_role_policy(account_id,app_name,k8s_namespace)
 

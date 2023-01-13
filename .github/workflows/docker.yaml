@@ -33,6 +33,11 @@ on:
         required: false
         type: string
         default: './ci/policies.json'
+      k8s_namespace:
+        description: "Namespace for application in K8s cluster (Default is the mimiro namespace)"
+        required: false
+        type: string
+        default: 'mimiro'
     secrets:
       ECR_REPO_POLICY:
         required: true
