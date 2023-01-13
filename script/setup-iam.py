@@ -6,7 +6,7 @@ import argparse
 parser=argparse.ArgumentParser()
 parser.add_argument('--app-name', help='Name of the application')
 parser.add_argument('--iam-policy-file', help='path of the policy json file')
-parser.add_argument('--k8s_namespace', help='namespace of the application')
+parser.add_argument('--k8s-namespace', help='namespace of the application')
 args=parser.parse_args()
 
 #IRSA = IAM Role for Service Account
