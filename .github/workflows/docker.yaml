@@ -217,11 +217,13 @@ jobs:
               echo "${{ inputs.iam_policies_json_file }} exists. will be attached as inline policy to Role"
               python3 ./reusable-flow/script/setup-iam.py \
               --iam-policy-file="${{ inputs.iam_policies_json_file }}" \
-              --app-name=${{ inputs.name }}
+              --app-name=${{ inputs.name }} \
+              --k8s_namespace=${{ inputs.k8s_namespace }}
           else
               echo "${{ inputs.iam_policies_json_file }} does not exist. No policy will be attached to the role "
               python3 ./reusable-flow/script/setup-iam.py \
-              --app-name=${{ inputs.name }}
+              --app-name=${{ inputs.name }} \
+              --k8s_namespace=${{ inputs.k8s_namespace }}
           fi
 
   PROD-IRSA:
@@ -252,9 +254,11 @@ jobs:
               echo "IAM policy exists. will be attached as inline policy to Role"
               python3 ./reusable-flow/script/setup-iam.py \
               --iam-policy-file="${{ inputs.iam_policies_json_file }}" \
-              --app-name=${{ inputs.name }}
+              --app-name=${{ inputs.name }} \
+              --k8s_namespace=${{ inputs.k8s_namespace }}
           else
               echo "${{ inputs.iam_policies_json_file }} does not exist. No policy will be attached to the role "
               python3 ./reusable-flow/script/setup-iam.py \
-              --app-name=${{ inputs.name }}
+              --app-name=${{ inputs.name }} \
+              --k8s_namespace=${{ inputs.k8s_namespace }}
           fi
