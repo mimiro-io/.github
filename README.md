@@ -158,6 +158,22 @@ jobs:
       name: "my-app"
 ```
 
+### Custom namespace for app in kubernetes cluster
+
+By default, all apps will be deployed to default namespace `mimiro`.
+
+However, if you wish to have a custom namespace for your app then you can override this by using `k8s_namespace` parameter.
+
+Example usage:
+
+```yaml
+jobs:
+  AWS:
+    uses: mimiro-io/.github/.github/workflows/docker.yaml@main
+    with:
+      k8s_namespace: "my-namespace"
+```
+
 ### Skip IRSA creation or Docker (ECR) jobs
 
 By default all the jobs in this workflow are executed. In case you wish to skip any or all of the jobs, it can be done by providing `true` to `skip_irsa` and/or `skip_docker` when calling to this common workflow.
