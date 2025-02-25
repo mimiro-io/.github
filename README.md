@@ -1,14 +1,4 @@
-# Reusable GitHub Actions Workflows
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**
-
-- [Docker Hub](#docker-hub)
-  - [Custom name for the Docker Hub image repository](#custom-name-for-the-docker-hub-image-repository)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-## Docker Hub
+# Docker Hub
 
 This workflow uses your Dockerfile to build and push a Docker image to Docker Hub.
 
@@ -32,13 +22,14 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 ```
 
-### Custom name for the Docker Hub image repository
+## Inputs
 
-By default, the GitHub repo name is used as the Docker Hub repository name.
+| Input | Description | Default | Required |
+|-------|-------------|---------|----------|
+| `name` | Custom Docker Hub repository name | GitHub repo name | No |
+| `platforms` | Comma-separated list of platforms | `linux/amd64,linux/arm64` | No |
 
-If you wish to use a custom name for the repository then you can override this by using the `name` parameter.
-
-Example usage:
+### Example with Custom Inputs
 
 ```yaml
 jobs:
@@ -46,4 +37,8 @@ jobs:
     uses: mimiro-io/.github/.github/workflows/dockerhub.yaml@main
     with:
       name: "some-other-name"
+      platforms: "linux/amd64"
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 ```
