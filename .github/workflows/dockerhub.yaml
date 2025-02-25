@@ -13,6 +13,11 @@ on:
         required: false
         type: string
         default: VERSION.json
+      platforms:
+        description: "Platforms to build for (comma-separated, e.g. 'linux/amd64,linux/arm64')"
+        required: false
+        type: string
+        default: "linux/amd64,linux/arm64"
     secrets:
       DOCKERHUB_USERNAME:
         required: true
@@ -22,7 +27,6 @@ on:
 jobs:
   docker:
     runs-on: ubuntu-latest
-    name: docker
 
     steps:
       - name: Checkout code
@@ -30,44 +34,33 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Docker Buildx (enable caching)
-        uses: docker/setup-buildx-action@v3
-
-      - name: install semver tool
+      - name: Install semver tool
         run: pip3 install semver
 
-      - name: validate release tag
-        run: |
-          if [ ${{ github.event_name }} == 'release' ]
-          then
-            echo "Validate that release tag is valid semver"
-            pysemver check $(echo $GITHUB_REF | cut -d / -f 3)
-          fi
-      - name: get next version
-        id: semver-tag
-        run: |
-          git fetch --all --tags
-          DESCRIBE=$( git describe --always --tags --long --first-parent )
-          VERSION=$(echo $DESCRIBE | cut -d "-" -f 1)
-          NEXT=$( pysemver bump patch $VERSION )
-          echo "tag=$NEXT" >> $GITHUB_OUTPUT
-      - name: "Calculated unstable tag"
-        run: echo "base tag next unstable version... ${{ steps.semver-tag.outputs.tag }}"
+      - name: Validate release tag
+        if: github.event_name == 'release'
+        run: pysemver check $(echo $GITHUB_REF | cut -d / -f 3)
 
-      - name: Set Image Tag
+      - name: Set image tag
         id: image_tag
         run: |
           if [ ${{ github.event_name }} == 'release' ]
           then
-            echo "Setting Stable Image Tag"
+            echo "Setting Stable image Tag"
             echo "image_tag=${{ inputs.name }}:$(echo $GITHUB_REF | cut -d / -f 3)" >> $GITHUB_OUTPUT
           else
-            echo "Setting Unstable Image"
-            echo "image_tag=${{ inputs.name }}:${{ steps.semver-tag.outputs.tag }}-$GITHUB_RUN_NUMBER-unstable" >> $GITHUB_OUTPUT
+            echo "Setting Unstable image tag"
+            git fetch --all --tags
+            DESCRIBE=$( git describe --always --tags --long --first-parent )
+            VERSION=$(echo $DESCRIBE | cut -d "-" -f 1)
+            NEXT=$( pysemver bump patch $VERSION )
+            echo "image_tag=${{ inputs.name }}:$NEXT-$GITHUB_RUN_NUMBER-unstable" >> $GITHUB_OUTPUT
           fi
 
+      - name: Show image tag
+        run: echo "${{ steps.image_tag.outputs.image_tag }}"
+
       - name: Write version file
-        id: version_file
         run: |
           versionTag=${{ steps.image_tag.outputs.image_tag }}
           JSON_STRING=$( jq -n \
@@ -77,18 +70,21 @@ jobs:
                   '{version: $ver, commit: $sha, build_date: $date}' )
           echo "$JSON_STRING" > "${{ inputs.version_file }}"
 
-      # Login to Docker registry except on PR
-      - name: Login to DockerHub
-        id: docker_login
+      - name: Login to Docker Hub
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker Image
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
         uses: docker/build-push-action@v6
-        id: docker_build
         with:
           context: .
           push: false
@@ -110,8 +106,7 @@ jobs:
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
 
-      - name: Push Image to DockerHub
-        id: dockerhub_push
+      - name: Build and push
         if: |
           (
             ( github.ref == 'refs/heads/master' && github.event_name == 'push' )
@@ -120,11 +115,13 @@ jobs:
           )
             &&
           ( github.event_name != 'pull_request')
-        run: |
-          docker image push ${{ steps.image_tag.outputs.image_tag }}
-      - name: Tag latest if release
-        id: dockerhub_latest
-        if: github.event_name == 'release'
-        run: |
-          docker tag ${{ steps.image_tag.outputs.image_tag }} ${{ inputs.name }}:latest
-          docker push ${{ inputs.name }}:latest
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ inputs.platforms }}
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ${{ steps.image_tag.outputs.image_tag }}
+            ${{ github.event_name == 'release' && format('{0}:latest', inputs.name) || null }}
