@@ -77,21 +77,22 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver: cloud
+          endpoint: "mimiro/docker-build-cloud"
+          install: true
 
       - name: Build Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: false
-          load: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          platforms: ${{ inputs.platforms }}
           tags: ${{ steps.image_tag.outputs.image_tag }}
+          outputs: |
+            type=cacheonly
+            type=local,dest=${{ runner.temp }}/docker-build-output
 
       - name: Trivy vulnerability scan
         uses: aquasecurity/trivy-action@master
@@ -99,7 +100,8 @@ jobs:
           TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db,public.ecr.aws/aquasecurity/trivy-db
           TRIVY_JAVA_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-java-db,public.ecr.aws/aquasecurity/trivy-java-db
         with:
-          image-ref: "${{ steps.image_tag.outputs.image_tag }}"
+          scan-type: 'rootfs'
+          scan-ref: ${{ runner.temp }}/docker-build-output
           format: "table"
           exit-code: "1"
           ignore-unfixed: true
@@ -119,9 +121,7 @@ jobs:
         with:
           context: .
           platforms: ${{ inputs.platforms }}
-          push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           tags: |
             ${{ steps.image_tag.outputs.image_tag }}
             ${{ github.event_name == 'release' && format('{0}:latest', inputs.name) || null }}
+          outputs: 'type=registry'
