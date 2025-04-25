@@ -120,6 +120,8 @@ jobs:
         with:
           context: .
           platforms: ${{ inputs.platforms }}
+          provenance: mode=max
+          sbom: true
           tags: |
             ${{ steps.image_tag.outputs.image_tag }}
             ${{ github.event_name == 'release' && format('{0}:latest', inputs.name) || null }}
