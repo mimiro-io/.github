@@ -18,6 +18,11 @@ on:
         required: false
         type: string
         default: "linux/amd64,linux/arm64"
+      strip_v_prefix:
+        description: "Whether to strip 'v' prefix from version tags (true/false)"
+        required: false
+        type: boolean
+        default: true
     secrets:
       DOCKERHUB_USERNAME:
         required: true
@@ -39,20 +44,34 @@ jobs:
 
       - name: Validate release tag
         if: github.event_name == 'release'
-        run: pysemver check $(echo $GITHUB_REF | cut -d / -f 3)
+        run: |
+          TAG_VERSION=$(echo $GITHUB_REF | cut -d / -f 3)
 
-      - name: Set image tag
+          if [[ "${{ inputs.strip_v_prefix }}" == "true" && "$TAG_VERSION" == v* ]]; then
+            TAG_VERSION="${TAG_VERSION:1}"
+          fi
+
+          pysemver check $TAG_VERSION
+
+          echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_ENV
+
+      - name: Set Image Tag
         id: image_tag
         run: |
           if [ ${{ github.event_name }} == 'release' ]
           then
-            echo "Setting Stable image Tag"
-            echo "image_tag=${{ inputs.name }}:$(echo $GITHUB_REF | cut -d / -f 3)" >> $GITHUB_OUTPUT
+            echo "Setting Stable Image Tag"
+            echo "image_tag=${{ inputs.name }}:$TAG_VERSION" >> $GITHUB_OUTPUT
           else
-            echo "Setting Unstable image tag"
+            echo "Setting Unstable Image tag"
             git fetch --all --tags
             DESCRIBE=$( git describe --always --tags --long --first-parent )
             VERSION=$(echo $DESCRIBE | cut -d "-" -f 1)
+
+            if [[ "${{ inputs.strip_v_prefix }}" == "true" && "$VERSION" == v* ]]; then
+              VERSION="${VERSION:1}"
+            fi
+
             NEXT=$( pysemver bump patch $VERSION )
             echo "image_tag=${{ inputs.name }}:$NEXT-$GITHUB_RUN_NUMBER-unstable" >> $GITHUB_OUTPUT
           fi
