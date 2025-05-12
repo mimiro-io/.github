@@ -1,5 +1,6 @@
 name: Reusable workflow for building an pushing Docker images to Docker Hub
-
+permissions:
+  contents: read
 on:
   workflow_call:
     inputs:
@@ -28,9 +29,6 @@ on:
         required: true
       DOCKERHUB_TOKEN:
         required: true
-
-permissions:
-  contents: read
 
 jobs:
   docker:
